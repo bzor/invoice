@@ -5,7 +5,7 @@ import type {
 } from "react";
 
 const FIELD =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900";
+  "w-full bg-slate-100 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-1 focus:ring-slate-900";
 
 export function Label({
   children,

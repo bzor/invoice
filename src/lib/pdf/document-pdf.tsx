@@ -1,5 +1,6 @@
 import {
   Document,
+  Font,
   Image,
   Page,
   StyleSheet,
@@ -18,6 +19,26 @@ import type {
   Settings,
 } from "@/lib/types";
 
+const CDN = "https://cdn.jsdelivr.net/fontsource/fonts";
+
+Font.register({
+  family: "Inter",
+  fonts: [
+    { src: `${CDN}/inter@latest/latin-400-normal.ttf`, fontWeight: 400 },
+    { src: `${CDN}/inter@latest/latin-500-normal.ttf`, fontWeight: 500 },
+    { src: `${CDN}/inter@latest/latin-600-normal.ttf`, fontWeight: 600 },
+  ],
+});
+Font.register({
+  family: "Familjen Grotesk",
+  fonts: [
+    { src: `${CDN}/familjen-grotesk@latest/latin-400-normal.ttf`, fontWeight: 400 },
+    { src: `${CDN}/familjen-grotesk@latest/latin-600-normal.ttf`, fontWeight: 600 },
+  ],
+});
+// Don't break words across lines.
+Font.registerHyphenationCallback((word) => [word]);
+
 export type PdfData = {
   doc: DocumentRow;
   client: Client | null;
@@ -26,209 +47,282 @@ export type PdfData = {
   settings: Settings;
 };
 
+const C = {
+  ink: "#0f172a",
+  c800: "#1e293b",
+  c600: "#475569",
+  c500: "#64748b",
+  c400: "#94a3b8",
+  c300: "#cbd5e1",
+  c200: "#e2e8f0",
+  c100: "#f1f5f9",
+};
+
 const s = StyleSheet.create({
   page: {
-    paddingTop: 48,
-    paddingBottom: 56,
-    paddingHorizontal: 48,
-    fontSize: 10,
-    color: "#0f172a",
-    fontFamily: "Helvetica",
+    flexDirection: "column",
+    paddingHorizontal: 54,
+    paddingTop: 52,
+    paddingBottom: 48,
+    fontFamily: "Inter",
+    fontSize: 9.5,
+    color: C.ink,
   },
   row: { flexDirection: "row" },
   between: { flexDirection: "row", justifyContent: "space-between" },
-  logo: { height: 36, marginBottom: 8, objectFit: "contain" },
-  businessName: { fontSize: 14, fontFamily: "Helvetica-Bold" },
-  muted: { color: "#64748b" },
-  docType: {
-    fontSize: 22,
-    fontFamily: "Helvetica-Bold",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  docNumber: { fontSize: 11, color: "#64748b", marginTop: 2 },
-  section: { marginTop: 24 },
   label: {
-    fontSize: 8,
-    color: "#94a3b8",
+    fontFamily: "Familjen Grotesk",
+    fontWeight: 500,
+    fontSize: 7,
+    letterSpacing: 1.1,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 3,
+    color: C.c400,
   },
-  metaGrid: { flexDirection: "row", gap: 32, marginTop: 24 },
-  tableHead: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#0f172a",
-    paddingBottom: 6,
-    marginTop: 24,
+  logo: { height: 26, marginBottom: 8, objectFit: "contain" },
+  bizName: { fontFamily: "Familjen Grotesk", fontWeight: 600, fontSize: 11 },
+  bizNameLg: { fontFamily: "Familjen Grotesk", fontWeight: 600, fontSize: 15 },
+  bizMeta: { fontSize: 8.5, color: C.c500, lineHeight: 1.45 },
+  wordmark: {
+    fontFamily: "Familjen Grotesk",
+    fontWeight: 600,
+    fontSize: 34,
+    textTransform: "uppercase",
+    letterSpacing: -0.5,
   },
-  tableRow: {
-    flexDirection: "row",
-    paddingVertical: 7,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#e2e8f0",
-  },
+  ruleDark: { height: 1, backgroundColor: C.ink },
+  ruleMid: { height: 1, backgroundColor: C.c200 },
+  ruleLight: { height: 1, backgroundColor: C.c100 },
+  metaVal: { marginTop: 4, fontSize: 9.5 },
+  // line items
+  liHead: { flexDirection: "row", paddingBottom: 6 },
+  liRow: { flexDirection: "row", paddingVertical: 8 },
+  cIndex: { width: 22, fontFamily: "Familjen Grotesk", fontSize: 8, color: C.c300 },
   cDesc: { flex: 1, paddingRight: 8 },
-  cQty: { width: 50, textAlign: "right" },
-  cPrice: { width: 75, textAlign: "right" },
-  cTotal: { width: 80, textAlign: "right" },
-  th: { fontSize: 8, color: "#94a3b8", textTransform: "uppercase" },
-  totals: { marginTop: 16, alignSelf: "flex-end", width: 220 },
+  cQty: { width: 44, textAlign: "right", color: C.c500 },
+  cPrice: { width: 78, textAlign: "right", color: C.c500 },
+  cAmount: { width: 86, textAlign: "right", fontWeight: 500 },
+  liTitle: { fontSize: 9.5, color: C.c800 },
+  liDesc: { marginTop: 2, fontSize: 8, color: C.c400, lineHeight: 1.35 },
+  // totals
+  totalsWrap: { marginTop: 18, flexDirection: "row", justifyContent: "flex-end" },
+  totals: { width: 220 },
   totalLine: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 3,
+    paddingVertical: 2.5,
+    fontSize: 9.5,
+    color: C.c500,
   },
-  grandTotal: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 8,
-    marginTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: "#0f172a",
-    fontSize: 13,
-    fontFamily: "Helvetica-Bold",
+  totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
+  totalAmt: {
+    fontFamily: "Familjen Grotesk",
+    fontWeight: 600,
+    fontSize: 17,
+    color: C.ink,
   },
-  notes: { marginTop: 32 },
-  bank: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: "#f8fafc",
-    borderRadius: 4,
+  footerBody: { marginTop: 6, fontSize: 8, color: C.c600, lineHeight: 1.5 },
+  thanks: {
+    marginTop: 26,
+    textAlign: "center",
+    fontFamily: "Familjen Grotesk",
+    fontSize: 7,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    color: C.c300,
   },
-  bold: { fontFamily: "Helvetica-Bold" },
-  pre: { lineHeight: 1.4 },
 });
 
-function MetaBlock({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View>
-      <Text style={s.label}>{label}</Text>
-      {children}
-    </View>
-  );
+// Estimate page height so the sheet grows vertically as one continuous page,
+// with a minimum of a full US Letter page (792pt).
+function estimateHeight(d: PdfData): number {
+  const hasFooter = !!(footerBank(d) || d.doc.notes);
+  let h = 52 + 48; // vertical padding
+  h += 110; // masthead
+  h += 22 + 56; // rule + meta row
+  h += 80; // billed-to / subject
+  h += 22; // line-item header + rule
+  for (const li of d.lineItems) {
+    h += 28;
+    if (li.title && li.description) h += 16;
+  }
+  h += 90; // totals
+  h += hasFooter ? 120 : 50; // footer
+  return Math.max(792, Math.ceil(h));
 }
 
-export function DocumentPDF({ doc, client, contact, lineItems, settings }: PdfData) {
+function footerBank(d: PdfData): string {
+  const { doc, settings } = d;
+  return doc.bank_info_mode === "domestic"
+    ? settings.bank_domestic
+    : doc.bank_info_mode === "international"
+      ? settings.bank_international
+      : "";
+}
+
+export function DocumentPDF(data: PdfData) {
+  const { doc, client, contact, lineItems, settings } = data;
   const money = (n: number) => formatMoney(n, doc.currency);
+  const qty = (n: number) =>
+    new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
   const typeLabel = doc.type === "invoice" ? "Invoice" : "Estimate";
-  const bank =
-    doc.bank_info_mode === "domestic"
-      ? settings.bank_domestic
-      : doc.bank_info_mode === "international"
-        ? settings.bank_international
-        : "";
+  const bank = footerBank(data);
+  const height = estimateHeight(data);
 
   return (
     <Document title={`${typeLabel} ${doc.number}`}>
-      <Page size="A4" style={s.page}>
-        {/* Header */}
+      <Page size={[612, height]} style={s.page}>
+        {/* Masthead */}
         <View style={s.between}>
-          <View>
+          <View style={{ maxWidth: "55%" }}>
             {settings.logo_url ? (
-              <Image src={settings.logo_url} style={s.logo} />
+              <>
+                <Image src={settings.logo_url} style={s.logo} />
+                <Text style={s.bizName}>{settings.business_name}</Text>
+              </>
             ) : (
-              <Text style={s.businessName}>{settings.business_name}</Text>
+              <Text style={s.bizNameLg}>{settings.business_name}</Text>
             )}
-            {settings.logo_url && (
-              <Text style={s.businessName}>{settings.business_name}</Text>
-            )}
-            <Text style={[s.muted, s.pre]}>{settings.business_address}</Text>
+            <Text style={[s.bizMeta, { marginTop: 6 }]}>
+              {settings.business_address}
+            </Text>
             {settings.business_email ? (
-              <Text style={s.muted}>{settings.business_email}</Text>
+              <Text style={s.bizMeta}>{settings.business_email}</Text>
             ) : null}
           </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={s.docType}>{typeLabel}</Text>
-            <Text style={s.docNumber}>{doc.number}</Text>
+          <Text style={s.wordmark}>{typeLabel}</Text>
+        </View>
+
+        <View style={[s.ruleDark, { marginTop: 22 }]} />
+
+        {/* Meta row */}
+        <View style={[s.row, { marginTop: 16 }]}>
+          {[
+            [`${typeLabel} No.`, doc.number],
+            ["Issued", formatDate(doc.issue_date)],
+            ["Due", doc.due_date ? formatDate(doc.due_date) : "—"],
+            ["Currency", doc.currency],
+          ].map(([l, v]) => (
+            <View key={l} style={{ width: "25%" }}>
+              <Text style={s.label}>{l}</Text>
+              <Text style={s.metaVal}>{v}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Billed to + subject */}
+        <View style={[s.row, { marginTop: 24 }]}>
+          <View style={{ width: "50%", paddingRight: 16 }}>
+            <Text style={s.label}>Billed to</Text>
+            <Text style={{ marginTop: 4, fontWeight: 500 }}>
+              {client?.name ?? "—"}
+            </Text>
+            {contact ? (
+              <Text style={{ color: C.c600 }}>{contact.name}</Text>
+            ) : null}
+            {contact?.email ? (
+              <Text style={{ fontSize: 8.5, color: C.c500 }}>
+                {contact.email}
+              </Text>
+            ) : null}
+            <Text style={[s.bizMeta, { marginTop: 3 }]}>{client?.address}</Text>
+          </View>
+          <View style={{ width: "50%" }}>
+            {doc.subject ? (
+              <>
+                <Text style={s.label}>Subject</Text>
+                <Text style={{ marginTop: 4 }}>{doc.subject}</Text>
+              </>
+            ) : null}
             {doc.po_number ? (
-              <Text style={s.docNumber}>PO {doc.po_number}</Text>
+              <View style={{ marginTop: doc.subject ? 12 : 0 }}>
+                <Text style={s.label}>PO Number</Text>
+                <Text style={{ marginTop: 4 }}>{doc.po_number}</Text>
+              </View>
             ) : null}
           </View>
         </View>
-
-        {/* Bill to + meta */}
-        <View style={s.metaGrid}>
-          <View style={{ flex: 1 }}>
-            <MetaBlock label="Bill to">
-              <Text style={s.bold}>{client?.name ?? "—"}</Text>
-              {contact ? <Text>{contact.name}</Text> : null}
-              {contact?.email ? <Text style={s.muted}>{contact.email}</Text> : null}
-              <Text style={[s.muted, s.pre]}>{client?.address}</Text>
-            </MetaBlock>
-          </View>
-          <MetaBlock label="Issued">
-            <Text>{formatDate(doc.issue_date)}</Text>
-          </MetaBlock>
-          {doc.due_date ? (
-            <MetaBlock label="Due">
-              <Text>{formatDate(doc.due_date)}</Text>
-            </MetaBlock>
-          ) : null}
-        </View>
-
-        {doc.subject ? (
-          <View style={s.section}>
-            <Text style={s.label}>Subject</Text>
-            <Text style={s.bold}>{doc.subject}</Text>
-          </View>
-        ) : null}
 
         {/* Line items */}
-        <View style={s.tableHead}>
-          <Text style={[s.cDesc, s.th]}>Description</Text>
-          <Text style={[s.cQty, s.th]}>Qty</Text>
-          <Text style={[s.cPrice, s.th]}>Price</Text>
-          <Text style={[s.cTotal, s.th]}>Amount</Text>
-        </View>
-        {lineItems.map((li) => (
-          <View key={li.id} style={s.tableRow} wrap={false}>
-            <Text style={s.cDesc}>{li.description}</Text>
-            <Text style={s.cQty}>{Number(li.quantity)}</Text>
-            <Text style={s.cPrice}>{money(Number(li.unit_price))}</Text>
-            <Text style={s.cTotal}>{money(Number(li.line_total))}</Text>
+        <View style={{ marginTop: 28 }}>
+          <View style={s.liHead}>
+            <Text style={[s.cIndex, s.label]}>{""}</Text>
+            <Text style={[s.cDesc, s.label]}>Description</Text>
+            <Text style={[s.cQty, s.label]}>Qty</Text>
+            <Text style={[s.cPrice, s.label]}>Price</Text>
+            <Text style={[s.cAmount, s.label]}>Amount</Text>
           </View>
-        ))}
-
-        {/* Totals */}
-        <View style={s.totals}>
-          <View style={s.totalLine}>
-            <Text style={s.muted}>Subtotal</Text>
-            <Text>{money(Number(doc.subtotal))}</Text>
-          </View>
-          {Number(doc.discount_total) > 0 ? (
-            <View style={s.totalLine}>
-              <Text style={s.muted}>
-                Discount
-                {doc.discount_type === "percent"
-                  ? ` (${Number(doc.discount_value)}%)`
-                  : ""}
-              </Text>
-              <Text>−{money(Number(doc.discount_total))}</Text>
+          <View style={s.ruleDark} />
+          {lineItems.map((li, i) => (
+            <View key={li.id}>
+              <View style={s.liRow}>
+                <Text style={s.cIndex}>{String(i + 1).padStart(2, "0")}</Text>
+                <View style={s.cDesc}>
+                  <Text style={s.liTitle}>{li.title || li.description}</Text>
+                  {li.title && li.description ? (
+                    <Text style={s.liDesc}>{li.description}</Text>
+                  ) : null}
+                </View>
+                <Text style={s.cQty}>{qty(Number(li.quantity))}</Text>
+                <Text style={s.cPrice}>{money(Number(li.unit_price))}</Text>
+                <Text style={s.cAmount}>{money(Number(li.line_total))}</Text>
+              </View>
+              <View style={s.ruleLight} />
             </View>
-          ) : null}
-          <View style={s.grandTotal}>
-            <Text>Total</Text>
-            <Text>{money(Number(doc.total))}</Text>
+          ))}
+
+          {/* Totals */}
+          <View style={s.totalsWrap}>
+            <View style={s.totals}>
+              <View style={s.totalLine}>
+                <Text>Subtotal</Text>
+                <Text>{money(Number(doc.subtotal))}</Text>
+              </View>
+              {Number(doc.discount_total) > 0 ? (
+                <View style={s.totalLine}>
+                  <Text>
+                    Discount
+                    {doc.discount_type === "percent"
+                      ? ` (${qty(Number(doc.discount_value))}%)`
+                      : ""}
+                  </Text>
+                  <Text>−{money(Number(doc.discount_total))}</Text>
+                </View>
+              ) : null}
+              <View style={[s.ruleDark, { marginVertical: 7 }]} />
+              <View style={s.totalRow}>
+                <Text style={s.label}>Total Due</Text>
+                <Text style={s.totalAmt}>{money(Number(doc.total))}</Text>
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* Notes */}
-        {doc.notes ? (
-          <View style={s.notes}>
-            <Text style={s.label}>Notes</Text>
-            <Text style={s.pre}>{doc.notes}</Text>
-          </View>
-        ) : null}
+        {/* Spacer pushes the footer to the bottom of the page */}
+        <View style={{ flexGrow: 1 }} />
 
-        {/* Bank info */}
-        {bank ? (
-          <View style={s.bank}>
-            <Text style={s.label}>Payment details</Text>
-            <Text style={s.pre}>{bank}</Text>
-          </View>
-        ) : null}
+        {/* Footer */}
+        <View>
+          {bank || doc.notes ? (
+            <>
+              <View style={s.ruleMid} />
+              <View style={[s.row, { marginTop: 14 }]}>
+                {bank ? (
+                  <View style={{ width: "50%", paddingRight: 20 }}>
+                    <Text style={s.label}>Payment details</Text>
+                    <Text style={s.footerBody}>{bank}</Text>
+                  </View>
+                ) : null}
+                {doc.notes ? (
+                  <View style={{ width: "50%" }}>
+                    <Text style={s.label}>Notes</Text>
+                    <Text style={s.footerBody}>{doc.notes}</Text>
+                  </View>
+                ) : null}
+              </View>
+            </>
+          ) : null}
+          <Text style={s.thanks}>{settings.business_name} — Thank you</Text>
+        </View>
       </Page>
     </Document>
   );

@@ -14,6 +14,7 @@ import type {
 } from "@/lib/types";
 
 export type LineInput = {
+  title: string;
   description: string;
   quantity: number;
   unit_price: number;
@@ -123,6 +124,7 @@ export async function saveDocument(
       input.line_items.map((li, i) => ({
         document_id: documentId,
         position: i,
+        title: li.title,
         description: li.description,
         quantity: li.quantity,
         unit_price: li.unit_price,
@@ -250,6 +252,7 @@ export async function convertToInvoice(formData: FormData) {
       e.line_items.map((li, i) => ({
         document_id: invoiceId,
         position: i,
+        title: li.title,
         description: li.description,
         quantity: li.quantity,
         unit_price: li.unit_price,

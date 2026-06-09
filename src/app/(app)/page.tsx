@@ -73,12 +73,13 @@ function MiniList({
                     {d.subject || "No subject"}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 pl-3">
+                <div className="flex flex-col items-end gap-1 pl-3">
                   <span className="text-sm tnum text-slate-700">
                     {formatMoney(Number(d.total), d.currency)}
                   </span>
                   <StatusBadge
                     status={effectiveStatus(d, amountPaid(d.payments))}
+                    size="sm"
                   />
                 </div>
               </Link>
@@ -93,7 +94,7 @@ function MiniList({
 export default async function DashboardPage() {
   const [stats, openEstimates, openInvoices] = await Promise.all([
     getDashboardStats(),
-    listDocuments("estimate", { status: ["draft", "sent", "approved"] }),
+    listDocuments("estimate", { status: ["draft", "sent"] }),
     listDocuments("invoice", { status: ["draft", "sent", "partial", "overdue"] }),
   ]);
 
@@ -129,7 +130,7 @@ export default async function DashboardPage() {
         <StatCard label="Payments year to date" value={fmt(stats.paidThisYear)} />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[65fr_35fr]">
         <MiniList title="Open invoices" href="/invoices" docs={openInvoices} />
         <MiniList title="Open estimates" href="/estimates" docs={openEstimates} />
       </div>

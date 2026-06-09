@@ -26,6 +26,7 @@ type Row = LineInput & { key: string };
 let keySeq = 0;
 const newRow = (li?: Partial<LineInput>): Row => ({
   key: `r${keySeq++}`,
+  title: li?.title ?? "",
   description: li?.description ?? "",
   quantity: li?.quantity ?? 1,
   unit_price: li?.unit_price ?? 0,
@@ -132,8 +133,15 @@ export function DocumentEditor({
       notes,
       bank_info_mode: bankMode,
       line_items: rows
-        .filter((r) => r.description.trim() || r.unit_price || r.quantity !== 1)
+        .filter(
+          (r) =>
+            r.title.trim() ||
+            r.description.trim() ||
+            r.unit_price ||
+            r.quantity !== 1,
+        )
         .map((r) => ({
+          title: r.title,
           description: r.description,
           quantity: Number(r.quantity) || 0,
           unit_price: Number(r.unit_price) || 0,
@@ -244,20 +252,29 @@ export function DocumentEditor({
       {/* Line items */}
       <div className="rounded-xl border border-slate-200 bg-white p-6">
         <div className="mb-3 grid grid-cols-12 gap-3 text-xs font-medium uppercase tracking-wide text-slate-400">
-          <div className="col-span-6">Description</div>
+          <div className="col-span-6">Item</div>
           <div className="col-span-2 text-right">Qty</div>
           <div className="col-span-2 text-right">Price</div>
           <div className="col-span-2 text-right">Total</div>
         </div>
         <div className="space-y-2">
           {rows.map((r) => (
-            <div key={r.key} className="grid grid-cols-12 items-center gap-3">
-              <Input
-                className="col-span-6"
-                value={r.description}
-                placeholder="Item description"
-                onChange={(e) => updateRow(r.key, { description: e.target.value })}
-              />
+            <div key={r.key} className="grid grid-cols-12 items-start gap-3">
+              <div className="col-span-6 space-y-1.5">
+                <Input
+                  value={r.title}
+                  placeholder="Item title"
+                  onChange={(e) => updateRow(r.key, { title: e.target.value })}
+                />
+                <Input
+                  className="text-xs"
+                  value={r.description}
+                  placeholder="Description (optional)"
+                  onChange={(e) =>
+                    updateRow(r.key, { description: e.target.value })
+                  }
+                />
+              </div>
               <Input
                 type="number"
                 step="any"
@@ -276,13 +293,13 @@ export function DocumentEditor({
                   updateRow(r.key, { unit_price: Number(e.target.value) })
                 }
               />
-              <div className="col-span-1 text-right text-sm tnum text-slate-700">
+              <div className="col-span-1 pt-2 text-right text-sm tnum text-slate-700">
                 {money((Number(r.quantity) || 0) * (Number(r.unit_price) || 0))}
               </div>
               <button
                 type="button"
                 onClick={() => removeRow(r.key)}
-                className="col-span-1 text-right text-slate-300 hover:text-red-500"
+                className="col-span-1 pt-2 text-right text-slate-300 hover:text-red-500"
                 aria-label="Remove line"
               >
                 ✕

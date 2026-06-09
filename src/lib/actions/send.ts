@@ -35,7 +35,7 @@ export async function sendDocument(input: {
   const pdf = await renderDocumentPdf(data);
   const { doc } = data;
   const typeLabel = doc.type === "invoice" ? "Invoice" : "Estimate";
-  const filename = `${doc.number}.pdf`;
+  const filename = `BZOR-${doc.number}.pdf`.toUpperCase();
 
   // Archive the PDF in Storage.
   const path = `${doc.type}/${doc.id}/${doc.number}.pdf`;

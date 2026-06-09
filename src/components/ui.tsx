@@ -14,8 +14,10 @@ export function PageHeader({
   return (
     <div className="mb-6 flex items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+        <h1 className="font-title text-[60px] uppercase text-slate-900">{title}</h1>
+        {subtitle && (
+          <p className="mt-[-10px] text-xs font-semibold text-slate-500">{subtitle}</p>
+        )}
       </div>
       {action}
     </div>
@@ -60,10 +62,9 @@ const BUTTON_BASE =
   "inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-60";
 
 const VARIANTS = {
-  primary: "bg-slate-900 text-white hover:bg-slate-800",
-  secondary:
-    "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
-  danger: "border border-red-200 bg-white text-red-600 hover:bg-red-50",
+  primary: "bg-black text-white hover:bg-slate-800",
+  secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200",
+  danger: "bg-red-50 text-red-600 hover:bg-red-100",
 } as const;
 
 type Variant = keyof typeof VARIANTS;
@@ -99,10 +100,18 @@ const STATUS_STYLES: Record<DocStatus, string> = {
   void: "bg-slate-100 text-slate-400 line-through",
 };
 
-export function StatusBadge({ status }: { status: DocStatus }) {
+export function StatusBadge({
+  status,
+  size = "md",
+}: {
+  status: DocStatus;
+  size?: "sm" | "md";
+}) {
+  const sizeClass =
+    size === "sm" ? "px-1.5 py-0 text-[10px]" : "px-2.5 py-0.5 text-xs";
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_STYLES[status]}`}
+      className={`inline-flex font-medium capitalize ${sizeClass} ${STATUS_STYLES[status]}`}
     >
       {status}
     </span>

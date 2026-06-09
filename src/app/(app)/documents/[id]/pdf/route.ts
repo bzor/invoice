@@ -13,7 +13,7 @@ export async function GET(
 
   const pdf = await renderDocumentPdf(data);
   const download = new URL(request.url).searchParams.get("download") === "1";
-  const filename = `${data.doc.number}.pdf`;
+  const filename = `BZOR-${data.doc.number}.pdf`.toUpperCase();
 
   return new Response(new Uint8Array(pdf), {
     headers: {

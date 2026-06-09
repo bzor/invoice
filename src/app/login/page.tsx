@@ -13,7 +13,7 @@ export default function LoginPage() {
     <main className="flex min-h-full items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-lg font-semibold text-white">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-black text-lg font-semibold text-white">
             B
           </div>
           <h1 className="text-xl font-semibold text-slate-900">
@@ -36,7 +36,7 @@ export default function LoginPage() {
               required
               autoComplete="email"
               placeholder="you@example.com"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+              className="w-full bg-slate-100 px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-slate-900"
             />
             {state.error && (
               <p className="text-sm text-red-600">{state.error}</p>
@@ -44,7 +44,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={pending}
-              className="w-full rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60"
+              className="w-full rounded-lg bg-black px-3 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60"
             >
               {pending ? "Sending…" : "Send magic link"}
             </button>

@@ -1,11 +1,23 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Bzor Display";
+  src:
+    url("/fonts/2DADEC_0_0.woff2") format("woff2"),
+    url("/fonts/2DADEC_0_0.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme inline {
-  --color-background: #f8fafc;
+  --color-background: #ffffff;
   --color-foreground: #0f172a;
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-title: "Bzor Display", var(--font-sans);
+  --font-grotesk: var(--font-familjen), var(--font-inter), system-ui, sans-serif;
 }
 
 html,
@@ -22,4 +34,12 @@ body {
 /* Tabular figures for money columns */
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* Square, borderless aesthetic — no rounded corners or hairline borders */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+  border-width: 0 !important;
 }

@@ -64,23 +64,8 @@ export function DocumentDetail({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
-        <DocumentPreview
-          doc={doc}
-          client={doc.client}
-          contact={doc.contact}
-          lineItems={doc.line_items}
-          business={{
-            business_name: settings.business_name,
-            business_address: settings.business_address,
-            business_email: settings.business_email,
-            logo_url: settings.logo_url,
-            bank_domestic: settings.bank_domestic,
-            bank_international: settings.bank_international,
-          }}
-        />
-
-        <div className="space-y-6">
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card className="p-5">
             <DocumentActions
               id={doc.id}
@@ -101,6 +86,21 @@ export function DocumentDetail({
             />
           )}
         </div>
+
+        <DocumentPreview
+          doc={doc}
+          client={doc.client}
+          contact={doc.contact}
+          lineItems={doc.line_items}
+          business={{
+            business_name: settings.business_name,
+            business_address: settings.business_address,
+            business_email: settings.business_email,
+            logo_url: settings.logo_url,
+            bank_domestic: settings.bank_domestic,
+            bank_international: settings.bank_international,
+          }}
+        />
       </div>
     </div>
   );

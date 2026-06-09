@@ -91,6 +91,7 @@ export interface LineItem {
   id: string;
   document_id: string;
   position: number;
+  title: string;
   description: string;
   quantity: number;
   unit_price: number;
