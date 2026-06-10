@@ -50,6 +50,15 @@ export function DocumentPreview({
   const qty = (n: number) =>
     new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
   const typeLabel = doc.type === "invoice" ? "Invoice" : "Estimate";
+  const isInvoice = doc.type === "invoice";
+  const metaFields = [
+    { label: `${typeLabel} No.`, value: doc.number },
+    { label: "Issued", value: formatDate(doc.issue_date) },
+    ...(isInvoice
+      ? [{ label: "Due", value: doc.due_date ? formatDate(doc.due_date) : "—" }]
+      : []),
+    { label: "Currency", value: doc.currency },
+  ];
   const cols = "grid-cols-[26px_1fr_56px_104px_116px]";
   const bank =
     doc.bank_info_mode === "domestic"
@@ -96,36 +105,22 @@ export function DocumentPreview({
       </div>
 
       {/* Meta row */}
-      <div className="mt-5 grid grid-cols-4 gap-6">
-        <div>
-          <Label>{typeLabel} No.</Label>
-          <p className="mt-1.5 text-sm tabular-nums">{doc.number}</p>
-        </div>
-        <div>
-          <Label>Issued</Label>
-          <p className="mt-1.5 text-sm">{formatDate(doc.issue_date)}</p>
-        </div>
-        <div>
-          <Label>Due</Label>
-          <p className="mt-1.5 text-sm">
-            {doc.due_date ? formatDate(doc.due_date) : "—"}
-          </p>
-        </div>
-        <div>
-          <Label>Currency</Label>
-          <p className="mt-1.5 text-sm">{doc.currency}</p>
-        </div>
+      <div
+        className={`mt-5 grid gap-6 ${isInvoice ? "grid-cols-4" : "grid-cols-3"}`}
+      >
+        {metaFields.map((f) => (
+          <div key={f.label}>
+            <Label>{f.label}</Label>
+            <p className="mt-1.5 text-sm">{f.value}</p>
+          </div>
+        ))}
       </div>
 
       {/* Billed to + subject */}
       <div className="mt-9 grid grid-cols-2 gap-6">
         <div>
-          <Label>Billed to</Label>
+          <Label>{isInvoice ? "Billed to" : "Prepared for"}</Label>
           <p className="mt-1.5 text-sm font-medium">{client?.name ?? "—"}</p>
-          {contact && <p className="text-sm text-slate-600">{contact.name}</p>}
-          {contact?.email && (
-            <p className="text-xs text-slate-500">{contact.email}</p>
-          )}
           <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-slate-500">
             {client?.address}
           </p>
@@ -210,7 +205,7 @@ export function DocumentPreview({
               <Rule />
             </div>
             <div className="flex items-baseline justify-between">
-              <Label>Total Due</Label>
+              <Label>{isInvoice ? "Total Due" : "Total"}</Label>
               <span className="font-grotesk text-2xl font-semibold tabular-nums tracking-tight">
                 {money(Number(doc.total))}
               </span>

@@ -165,6 +165,19 @@ export function DocumentPDF(data: PdfData) {
   const qty = (n: number) =>
     new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
   const typeLabel = doc.type === "invoice" ? "Invoice" : "Estimate";
+  const isInvoice = doc.type === "invoice";
+  const metaFields: [string, string][] = [
+    [`${typeLabel} No.`, doc.number],
+    ["Issued", formatDate(doc.issue_date)],
+    ...(isInvoice
+      ? ([["Due", doc.due_date ? formatDate(doc.due_date) : "—"]] as [
+          string,
+          string,
+        ][])
+      : []),
+    ["Currency", doc.currency],
+  ];
+  const metaW = `${100 / metaFields.length}%`;
   const bank = footerBank(data);
   const height = estimateHeight(data);
 
@@ -196,13 +209,8 @@ export function DocumentPDF(data: PdfData) {
 
         {/* Meta row */}
         <View style={[s.row, { marginTop: 16 }]}>
-          {[
-            [`${typeLabel} No.`, doc.number],
-            ["Issued", formatDate(doc.issue_date)],
-            ["Due", doc.due_date ? formatDate(doc.due_date) : "—"],
-            ["Currency", doc.currency],
-          ].map(([l, v]) => (
-            <View key={l} style={{ width: "25%" }}>
+          {metaFields.map(([l, v]) => (
+            <View key={l} style={{ width: metaW }}>
               <Text style={s.label}>{l}</Text>
               <Text style={s.metaVal}>{v}</Text>
             </View>
@@ -212,18 +220,12 @@ export function DocumentPDF(data: PdfData) {
         {/* Billed to + subject */}
         <View style={[s.row, { marginTop: 24 }]}>
           <View style={{ width: "50%", paddingRight: 16 }}>
-            <Text style={s.label}>Billed to</Text>
+            <Text style={s.label}>
+              {isInvoice ? "Billed to" : "Prepared for"}
+            </Text>
             <Text style={{ marginTop: 4, fontWeight: 500 }}>
               {client?.name ?? "—"}
             </Text>
-            {contact ? (
-              <Text style={{ color: C.c600 }}>{contact.name}</Text>
-            ) : null}
-            {contact?.email ? (
-              <Text style={{ fontSize: 8.5, color: C.c500 }}>
-                {contact.email}
-              </Text>
-            ) : null}
             <Text style={[s.bizMeta, { marginTop: 3 }]}>{client?.address}</Text>
           </View>
           <View style={{ width: "50%" }}>
@@ -290,7 +292,7 @@ export function DocumentPDF(data: PdfData) {
               ) : null}
               <View style={[s.ruleDark, { marginVertical: 7 }]} />
               <View style={s.totalRow}>
-                <Text style={s.label}>Total Due</Text>
+                <Text style={s.label}>{isInvoice ? "Total Due" : "Total"}</Text>
                 <Text style={s.totalAmt}>{money(Number(doc.total))}</Text>
               </View>
             </View>
