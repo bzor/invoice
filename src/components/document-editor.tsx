@@ -32,6 +32,14 @@ const newRow = (li?: Partial<LineInput>): Row => ({
   unit_price: li?.unit_price ?? 0,
 });
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="mb-5 border-b border-line pb-2 font-grotesk text-xs uppercase tracking-wider text-muted">
+      {children}
+    </h2>
+  );
+}
+
 export function DocumentEditor({
   type,
   clients,
@@ -161,11 +169,13 @@ export function DocumentEditor({
   const money = (n: number) => formatMoney(n, currency);
 
   return (
-    <div className="space-y-6">
-      {/* Header fields */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Client">
+    <div>
+      <div className="space-y-12">
+        {/* Details */}
+        <section>
+          <SectionLabel>Details</SectionLabel>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Client">
             <Select
               value={clientId}
               onChange={(e) => onPickClient(e.target.value)}
@@ -242,22 +252,24 @@ export function DocumentEditor({
                 </option>
               ))}
             </Select>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-faint">
               Due {formatDate(dueDate)}
             </p>
           </Field>
-        </div>
-      </div>
+          </div>
+        </section>
 
-      {/* Line items */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6">
-        <div className="mb-3 grid grid-cols-12 gap-3 text-xs font-medium uppercase tracking-wide text-slate-400">
-          <div className="col-span-6">Item</div>
-          <div className="col-span-2 text-right">Qty</div>
-          <div className="col-span-2 text-right">Price</div>
-          <div className="col-span-2 text-right">Total</div>
-        </div>
-        <div className="space-y-2">
+        {/* Line items */}
+        <section>
+          <SectionLabel>Line items</SectionLabel>
+          <div className="mb-3 grid grid-cols-12 gap-3 font-grotesk text-xs font-medium uppercase tracking-wider text-muted">
+            <div className="col-span-6">Item</div>
+            <div className="col-span-2 text-right">Qty</div>
+            <div className="col-span-2 text-right">Price</div>
+            <div className="col-span-1 text-right">Total</div>
+            <div className="col-span-1" />
+          </div>
+          <div className="space-y-2">
           {rows.map((r) => (
             <div key={r.key} className="grid grid-cols-12 items-start gap-3">
               <div className="col-span-6 space-y-1.5">
@@ -293,13 +305,13 @@ export function DocumentEditor({
                   updateRow(r.key, { unit_price: Number(e.target.value) })
                 }
               />
-              <div className="col-span-1 pt-2 text-right text-sm tnum text-slate-700">
+              <div className="col-span-1 pt-2 text-right text-sm tnum text-ink">
                 {money((Number(r.quantity) || 0) * (Number(r.unit_price) || 0))}
               </div>
               <button
                 type="button"
                 onClick={() => removeRow(r.key)}
-                className="col-span-1 pt-2 text-right text-slate-300 hover:text-red-500"
+                className="col-span-1 pt-2 text-right text-faint hover:text-alert"
                 aria-label="Remove line"
               >
                 ✕
@@ -310,7 +322,7 @@ export function DocumentEditor({
         <button
           type="button"
           onClick={addRow}
-          className="mt-3 text-sm font-medium text-slate-500 hover:text-slate-900"
+          className="mt-3 font-grotesk text-xs font-medium uppercase tracking-wider text-muted hover:text-ink"
         >
           + Add line
         </button>
@@ -318,13 +330,13 @@ export function DocumentEditor({
         {/* Totals */}
         <div className="mt-6 flex justify-end">
           <div className="w-64 space-y-2 text-sm">
-            <div className="flex justify-between text-slate-600">
+            <div className="flex justify-between text-muted">
               <span>Subtotal</span>
               <span className="tnum">{money(totals.subtotal)}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-slate-600">Discount</span>
+                <span className="text-muted">Discount</span>
                 <Select
                   value={discountType}
                   onChange={(e) =>
@@ -344,45 +356,47 @@ export function DocumentEditor({
                 onChange={(e) => setDiscountValue(Number(e.target.value))}
               />
             </div>
-            <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-semibold text-slate-900">
+            <div className="flex justify-between border-t border-line pt-2 text-base font-semibold text-ink">
               <span>Total</span>
               <span className="tnum">{money(totals.total)}</span>
             </div>
           </div>
         </div>
+        </section>
+
+        {/* Notes & payment */}
+        <section>
+          <SectionLabel>Notes &amp; payment</SectionLabel>
+          <Field label="Notes (shown on document)">
+            <Textarea
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Thank-you note, terms, etc."
+            />
+          </Field>
+
+          <Field label="Bank details" className="mt-4">
+            <div className="flex gap-4 text-sm text-muted">
+              {(["none", "domestic", "international"] as BankInfoMode[]).map((m) => (
+                <label key={m} className="flex items-center gap-2 capitalize">
+                  <input
+                    type="radio"
+                    name="bank_mode"
+                    checked={bankMode === m}
+                    onChange={() => setBankMode(m)}
+                  />
+                  {m}
+                </label>
+              ))}
+            </div>
+          </Field>
+        </section>
       </div>
 
-      {/* Notes + bank info */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6">
-        <Field label="Notes (shown on document)">
-          <Textarea
-            rows={3}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Thank-you note, terms, etc."
-          />
-        </Field>
+      {error && <p className="mt-8 text-sm text-alert">{error}</p>}
 
-        <Field label="Bank details" className="mt-4">
-          <div className="flex gap-4 text-sm text-slate-700">
-            {(["none", "domestic", "international"] as BankInfoMode[]).map((m) => (
-              <label key={m} className="flex items-center gap-2 capitalize">
-                <input
-                  type="radio"
-                  name="bank_mode"
-                  checked={bankMode === m}
-                  onChange={() => setBankMode(m)}
-                />
-                {m}
-              </label>
-            ))}
-          </div>
-        </Field>
-      </div>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
-
-      <div className="flex gap-2">
+      <div className="mt-8 flex gap-2 border-t border-line pt-6">
         <button
           onClick={submit}
           disabled={pending}

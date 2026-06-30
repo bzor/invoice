@@ -19,7 +19,7 @@ export default async function EstimatesPage() {
           action={<LinkButton href="/estimates/new">New estimate</LinkButton>}
         />
       ) : (
-        <DocumentsTable docs={docs} />
+        <DocumentsTable docs={docs} type="estimate" />
       )}
     </>
   );

@@ -5,7 +5,7 @@ import type {
 } from "react";
 
 const FIELD =
-  "w-full bg-slate-100 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-1 focus:ring-slate-900";
+  "w-full border border-line bg-surface px-3 py-2 text-sm text-ink outline-none transition placeholder:text-faint focus:border-ink";
 
 export function Label({
   children,
@@ -17,7 +17,7 @@ export function Label({
   return (
     <label
       htmlFor={htmlFor}
-      className="mb-1 block text-sm font-medium text-slate-700"
+      className="mb-1.5 block font-grotesk text-xs uppercase tracking-wider text-muted"
     >
       {children}
     </label>
@@ -41,19 +41,44 @@ export function Field({
   );
 }
 
+// Suppress password-manager / browser autofill on app data-entry fields.
+// `autoComplete="off"` alone is widely ignored, so we pair it with the
+// per-manager opt-out attributes (1Password, LastPass, Bitwarden/Dashlane).
+// Spread before {...props} so any single field can still override.
+const NO_AUTOFILL = {
+  autoComplete: "off",
+  "data-1p-ignore": "true",
+  "data-lpignore": "true",
+  "data-form-type": "other",
+} as const;
+
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={`${FIELD} ${props.className ?? ""}`} />;
+  return (
+    <input
+      {...NO_AUTOFILL}
+      {...props}
+      className={`${FIELD} ${props.className ?? ""}`}
+    />
+  );
 }
 
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
-    <textarea {...props} className={`${FIELD} ${props.className ?? ""}`} />
+    <textarea
+      {...NO_AUTOFILL}
+      {...props}
+      className={`${FIELD} ${props.className ?? ""}`}
+    />
   );
 }
 
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select {...props} className={`${FIELD} ${props.className ?? ""}`}>
+    <select
+      {...NO_AUTOFILL}
+      {...props}
+      className={`${FIELD} ${props.className ?? ""}`}
+    >
       {props.children}
     </select>
   );

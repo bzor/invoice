@@ -1,10 +1,11 @@
 import Link from "next/link";
 
-import { Card, LinkButton, PageHeader, StatusBadge } from "@/components/ui";
+import { LinkButton, PageHeader, StatusBadge } from "@/components/ui";
 import {
   amountPaid,
   getDashboardStats,
   listDocuments,
+  listRecentPaidInvoices,
   type DocumentListItem,
 } from "@/lib/data";
 import { formatMoney } from "@/lib/money";
@@ -12,99 +13,129 @@ import { effectiveStatus } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
 
-function StatCard({
-  label,
-  value,
-  hint,
-  tone = "default",
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  tone?: "default" | "warn";
-}) {
+function SecondaryStat({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="p-5">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p
-        className={`mt-1 text-2xl font-semibold tnum ${
-          tone === "warn" ? "text-red-600" : "text-slate-900"
-        }`}
-      >
-        {value}
-      </p>
-      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
-    </Card>
+    <div className="px-8 py-5 first:pl-0 last:pr-0">
+      <p className="font-grotesk text-xs uppercase tracking-wider text-muted">{label}</p>
+      <p className="mt-1.5 text-2xl font-medium tnum text-ink">{value}</p>
+    </div>
   );
 }
 
-function MiniList({
+function OpenList({
   title,
   href,
   docs,
+  limit = 6,
 }: {
   title: string;
   href: string;
   docs: DocumentListItem[];
+  limit?: number;
 }) {
   return (
-    <Card>
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-        <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
-        <Link href={href} className="text-xs font-medium text-slate-500 hover:text-slate-900">
+    <section>
+      <div className="flex items-baseline justify-between border-b border-line pb-2">
+        <h2 className="font-grotesk text-xs uppercase tracking-wider text-muted">{title}</h2>
+        <Link
+          href={href}
+          className="font-grotesk text-xs uppercase tracking-wider text-muted transition hover:text-ink"
+        >
           View all →
         </Link>
       </div>
+
       {docs.length === 0 ? (
-        <p className="px-5 py-8 text-center text-sm text-slate-400">Nothing open</p>
+        <p className="py-10 text-sm text-faint">Nothing open.</p>
       ) : (
-        <ul className="divide-y divide-slate-100">
-          {docs.slice(0, 6).map((d) => (
+        <ul className="divide-y divide-line">
+          {docs.slice(0, limit).map((d) => (
             <li key={d.id}>
               <Link
                 href={`/${d.type === "invoice" ? "invoices" : "estimates"}/${d.id}`}
-                className="flex items-center justify-between px-5 py-3 hover:bg-slate-50"
+                className="group -mx-2 grid grid-cols-[1fr_auto] items-center gap-x-6 gap-y-1 px-2 py-3 transition hover:bg-hover sm:grid-cols-[auto_1fr_auto_6.5rem]"
               >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-900">
-                    {d.number} · {d.client?.name ?? "—"}
-                  </p>
-                  <p className="truncate text-xs text-slate-400">
-                    {d.subject || "No subject"}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1 pl-3">
-                  <span className="text-sm tnum text-slate-700">
-                    {formatMoney(Number(d.total), d.currency)}
-                  </span>
+                <span className="text-sm font-medium tnum text-ink">{d.number}</span>
+                <span className="truncate text-sm text-muted">
+                  {d.client?.name ?? "—"}
+                  {d.subject ? ` · ${d.subject}` : ""}
+                </span>
+                <span className="text-right text-sm tnum text-ink">
+                  {formatMoney(Number(d.total), d.currency)}
+                </span>
+                <span className="hidden justify-self-end sm:flex">
                   <StatusBadge
                     status={effectiveStatus(d, amountPaid(d.payments))}
                     size="sm"
                   />
-                </div>
+                </span>
               </Link>
             </li>
           ))}
         </ul>
       )}
-    </Card>
+    </section>
   );
 }
 
 export default async function DashboardPage() {
-  const [stats, openEstimates, openInvoices] = await Promise.all([
-    getDashboardStats(),
-    listDocuments("estimate", { status: ["draft", "sent"] }),
-    listDocuments("invoice", { status: ["draft", "sent", "partial", "overdue"] }),
-  ]);
+  const [stats, openEstimates, invoiceCandidates, recentInvoices] =
+    await Promise.all([
+      getDashboardStats(),
+      listDocuments("estimate", { status: ["draft", "sent"] }),
+      listDocuments("invoice", { status: ["draft", "sent"] }),
+      listRecentPaidInvoices(10),
+    ]);
+
+  // "paid"/"partial"/"overdue" are derived from payments, not stored — so a
+  // fully-paid invoice still has stored status "sent". Drop those from the
+  // open list by checking effective status.
+  const openInvoices = invoiceCandidates.filter(
+    (d) => effectiveStatus(d, amountPaid(d.payments)) !== "paid",
+  );
 
   const fmt = (n: number) => formatMoney(n, stats.baseCurrency);
+
+  // "Needs attention" — the actionable to-do queue.
+  const invoiceDrafts = openInvoices.filter((d) => d.status === "draft").length;
+  const estimateDrafts = openEstimates.filter((d) => d.status === "draft").length;
+  const awaitingReply = openEstimates.filter((d) => d.status === "sent").length;
+  const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+  const attention: {
+    label: string;
+    note?: string;
+    href: string;
+    tone?: "alert";
+  }[] = [];
+  if (stats.overdueCount > 0)
+    attention.push({
+      label: `${plural(stats.overdueCount, "invoice")} overdue`,
+      note: fmt(stats.overdueAmount),
+      href: "/invoices",
+      tone: "alert",
+    });
+  if (awaitingReply > 0)
+    attention.push({
+      label: `${plural(awaitingReply, "estimate")} awaiting reply`,
+      href: "/estimates",
+    });
+  if (invoiceDrafts > 0)
+    attention.push({
+      label: `${plural(invoiceDrafts, "invoice draft")} to send`,
+      href: "/invoices",
+    });
+  if (estimateDrafts > 0)
+    attention.push({
+      label: `${plural(estimateDrafts, "estimate draft")} to send`,
+      href: "/estimates",
+    });
 
   return (
     <>
       <PageHeader
         title="Dashboard"
-        subtitle={`Totals shown in ${stats.baseCurrency}`}
+        subtitle={`Totals in ${stats.baseCurrency}`}
         action={
           <div className="flex gap-2">
             <LinkButton href="/estimates/new" variant="secondary">
@@ -115,24 +146,83 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Outstanding"
-          value={fmt(stats.outstanding)}
-          hint={
-            stats.overdueCount > 0
-              ? `${stats.overdueCount} overdue`
-              : "All current"
-          }
-          tone={stats.overdueCount > 0 ? "warn" : "default"}
-        />
-        <StatCard label="Paid last month" value={fmt(stats.paidLastMonth)} />
-        <StatCard label="Payments year to date" value={fmt(stats.paidThisYear)} />
-      </div>
+      {/* Hero — the one number that matters, with overdue called out in alert */}
+      <section className="flex items-end justify-between border-y border-line py-7">
+        <div>
+          <p className="font-grotesk text-xs uppercase tracking-wider text-muted">Outstanding</p>
+          <p className="mt-2 text-5xl font-medium tnum leading-none text-ink">
+            {fmt(stats.outstanding)}
+          </p>
+        </div>
+        {stats.overdueCount > 0 ? (
+          <Link
+            href="/invoices"
+            className="font-grotesk text-sm font-medium uppercase tracking-wider text-alert transition hover:opacity-70"
+          >
+            {stats.overdueCount} overdue · {fmt(stats.overdueAmount)} →
+          </Link>
+        ) : (
+          <span className="font-grotesk text-sm uppercase tracking-wider text-faint">
+            All current
+          </span>
+        )}
+      </section>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[65fr_35fr]">
-        <MiniList title="Open invoices" href="/invoices" docs={openInvoices} />
-        <MiniList title="Open estimates" href="/estimates" docs={openEstimates} />
+      {/* Secondary stats — a single lined band, not a card grid */}
+      <section className="grid grid-cols-4 divide-x divide-line border-b border-line">
+        <SecondaryStat label="Invoiced this month" value={fmt(stats.invoicedThisMonth)} />
+        <SecondaryStat label="Invoiced last month" value={fmt(stats.invoicedLastMonth)} />
+        <SecondaryStat label="Paid last month" value={fmt(stats.paidLastMonth)} />
+        <SecondaryStat label="Payments year to date" value={fmt(stats.paidThisYear)} />
+      </section>
+
+      {/* Needs attention — the actionable queue */}
+      {attention.length > 0 && (
+        <section className="mt-12">
+          <h2 className="border-b border-line pb-2 font-grotesk text-xs uppercase tracking-wider text-muted">
+            Needs attention
+          </h2>
+          <ul className="divide-y divide-line">
+            {attention.map((a, i) => (
+              <li key={i}>
+                <Link
+                  href={a.href}
+                  className="-mx-2 flex items-center justify-between gap-4 px-2 py-3 text-sm transition hover:bg-hover"
+                >
+                  <span
+                    className={
+                      a.tone === "alert"
+                        ? "font-medium text-alert"
+                        : "text-ink"
+                    }
+                  >
+                    {a.label}
+                  </span>
+                  <span className="flex items-center gap-3">
+                    {a.note && <span className="tnum text-muted">{a.note}</span>}
+                    <span className="text-faint">→</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Working surfaces — invoices lead, estimates follow */}
+      <div className="mt-12 space-y-12">
+        <OpenList title="Open invoices" href="/invoices" docs={openInvoices} />
+        {openEstimates.length > 0 && (
+          <OpenList title="Open estimates" href="/estimates" docs={openEstimates} />
+        )}
+        {recentInvoices.length > 0 && (
+          <OpenList
+            title="Recent invoices"
+            href="/invoices"
+            docs={recentInvoices}
+            limit={10}
+          />
+        )}
       </div>
     </>
   );

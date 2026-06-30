@@ -18,14 +18,14 @@ export function ShareActions({
 
   if (status === "approved") {
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+      <div className="border border-line bg-surface px-5 py-4 text-sm font-medium text-accent">
         ✓ You approved this estimate. Thank you!
       </div>
     );
   }
   if (status === "declined") {
     return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium text-slate-600">
+      <div className="border border-line bg-canvas px-5 py-4 text-sm font-medium text-muted">
         This estimate was declined.
       </div>
     );
@@ -41,8 +41,8 @@ export function ShareActions({
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <p className="mb-3 text-sm font-medium text-slate-900">
+    <div className="border border-line bg-surface p-5">
+      <p className="mb-3 font-grotesk text-xs uppercase tracking-wider text-muted">
         Ready to proceed?
       </p>
       <div className="flex gap-2">
@@ -61,7 +61,7 @@ export function ShareActions({
           Decline
         </button>
       </div>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-alert">{error}</p>}
     </div>
   );
 }

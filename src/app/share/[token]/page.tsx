@@ -23,7 +23,7 @@ export default async function SharePage({
   if (doc.type !== "estimate") notFound();
 
   return (
-    <main className="min-h-full overflow-x-auto bg-slate-100 py-10">
+    <main className="min-h-full overflow-x-auto bg-canvas py-10">
       <div className="mx-auto w-[816px] max-w-full space-y-5 px-4">
         <ShareActions token={token} initialStatus={doc.status} />
         <DocumentPreview

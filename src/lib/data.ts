@@ -2,6 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { toBase } from "@/lib/money";
+import { effectiveStatus } from "@/lib/status";
 import type {
   Client,
   Contact,
@@ -71,6 +72,38 @@ export async function listDocumentsForClient(
   return (data ?? []) as unknown as DocumentRow[];
 }
 
+/** Lifetime money rollup for one client, in the base currency. */
+export async function getClientStats(clientId: string) {
+  const supabase = await createClient();
+  const settings = await getSettings();
+  const { data: invoices } = await supabase
+    .from("documents")
+    .select("total, fx_rate, status, payments(amount)")
+    .eq("client_id", clientId)
+    .eq("type", "invoice")
+    .neq("status", "void");
+
+  let invoiced = 0;
+  let paid = 0;
+  let outstanding = 0;
+  type Row = {
+    total: number;
+    fx_rate: number;
+    status: string;
+    payments: { amount: number }[];
+  };
+  for (const inv of (invoices ?? []) as unknown as Row[]) {
+    const fx = Number(inv.fx_rate);
+    const total = Number(inv.total);
+    const p = amountPaid(inv.payments as Payment[]);
+    invoiced += toBase(total, fx);
+    paid += toBase(p, fx);
+    const due = total - p;
+    if (due > 0.005 && inv.status !== "draft") outstanding += toBase(due, fx);
+  }
+  return { baseCurrency: settings.base_currency, invoiced, paid, outstanding };
+}
+
 export type DocumentListItem = DocumentRow & {
   client: Client | null;
   payments: { amount: number }[];
@@ -91,6 +124,35 @@ export async function listDocuments(
 
   const { data } = await query;
   return (data ?? []) as unknown as DocumentListItem[];
+}
+
+/**
+ * Recently closed invoices — fully paid, most recently *paid* first. "Paid" is
+ * derived from payments (a fully-paid invoice may still be stored as "sent"),
+ * so we filter on effective status rather than the status column, and order by
+ * each invoice's latest payment date.
+ */
+export async function listRecentPaidInvoices(
+  limit = 10,
+): Promise<DocumentListItem[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("documents")
+    .select("*, client:clients(*), payments(amount, date)")
+    .eq("type", "invoice")
+    .neq("status", "void");
+
+  const docs = (data ?? []) as unknown as (DocumentListItem & {
+    payments: { amount: number; date: string }[];
+  })[];
+
+  const lastPaid = (d: { payments: { date: string }[] }) =>
+    d.payments.reduce((max, p) => (p.date > max ? p.date : max), "");
+
+  return docs
+    .filter((d) => effectiveStatus(d, amountPaid(d.payments)) === "paid")
+    .sort((a, b) => lastPaid(b).localeCompare(lastPaid(a)))
+    .slice(0, limit);
 }
 
 export async function getDocument(
@@ -163,7 +225,7 @@ export async function getDashboardStats() {
 
   const { data: invoices } = await supabase
     .from("documents")
-    .select("id, total, fx_rate, status, due_date, payments(amount)")
+    .select("id, total, fx_rate, status, due_date, issue_date, payments(amount)")
     .eq("type", "invoice")
     .neq("status", "void");
 
@@ -177,6 +239,9 @@ export async function getDashboardStats() {
 
   let outstanding = 0;
   let overdueCount = 0;
+  let overdueAmount = 0;
+  let invoicedThisMonth = 0;
+  let invoicedLastMonth = 0;
   const today = now.toISOString().slice(0, 10);
 
   type InvoiceRollupRow = {
@@ -184,15 +249,28 @@ export async function getDashboardStats() {
     fx_rate: number;
     status: string;
     due_date: string | null;
+    issue_date: string;
     payments: { amount: number }[];
   };
 
   for (const inv of (invoices ?? []) as unknown as InvoiceRollupRow[]) {
+    const fx = Number(inv.fx_rate);
     const paid = amountPaid(inv.payments as Payment[]);
     const due = Number(inv.total) - paid;
+
+    // Invoiced per month — total value billed (non-void), matching Reports.
+    if (inv.issue_date >= thisMonthStart) {
+      invoicedThisMonth += toBase(Number(inv.total), fx);
+    } else if (inv.issue_date >= lastMonthStart) {
+      invoicedLastMonth += toBase(Number(inv.total), fx);
+    }
+
     if (due > 0.005 && inv.status !== "draft") {
-      outstanding += toBase(due, Number(inv.fx_rate));
-      if (inv.due_date && inv.due_date < today) overdueCount++;
+      outstanding += toBase(due, fx);
+      if (inv.due_date && inv.due_date < today) {
+        overdueCount++;
+        overdueAmount += toBase(due, fx);
+      }
     }
   }
 
@@ -220,6 +298,9 @@ export async function getDashboardStats() {
     baseCurrency: settings.base_currency,
     outstanding,
     overdueCount,
+    overdueAmount,
+    invoicedThisMonth,
+    invoicedLastMonth,
     paidThisYear,
     paidLastMonth,
   };

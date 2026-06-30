@@ -12,11 +12,15 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-end justify-between gap-4">
+    <div className="mb-8 flex items-end justify-between gap-4">
       <div>
-        <h1 className="font-title text-[60px] uppercase text-slate-900">{title}</h1>
+        <h1 className="font-grotesk text-5xl font-semibold uppercase leading-none tracking-tight text-ink">
+          {title}
+        </h1>
         {subtitle && (
-          <p className="mt-[-10px] text-xs font-semibold text-slate-500">{subtitle}</p>
+          <p className="mt-2 font-grotesk text-xs uppercase tracking-wider text-muted">
+            {subtitle}
+          </p>
         )}
       </div>
       {action}
@@ -32,11 +36,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div
-      className={`rounded-xl border border-slate-200 bg-white ${className}`}
-    >
-      {children}
-    </div>
+    <div className={`border border-line bg-surface ${className}`}>{children}</div>
   );
 }
 
@@ -50,21 +50,21 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <p className="text-sm font-medium text-slate-700">{title}</p>
-      {hint && <p className="mt-1 text-sm text-slate-400">{hint}</p>}
+    <div className="border border-dashed border-line bg-surface px-6 py-12 text-center">
+      <p className="text-sm font-medium text-ink">{title}</p>
+      {hint && <p className="mt-1 text-sm text-faint">{hint}</p>}
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );
 }
 
 const BUTTON_BASE =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-60";
+  "inline-flex items-center justify-center gap-1.5 px-4 py-2 font-grotesk text-xs font-medium uppercase tracking-wider transition disabled:opacity-60";
 
 const VARIANTS = {
-  primary: "bg-black text-white hover:bg-slate-800",
-  secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200",
-  danger: "bg-red-50 text-red-600 hover:bg-red-100",
+  primary: "bg-ink text-surface hover:opacity-85",
+  secondary: "border border-line text-ink hover:bg-hover",
+  danger: "border border-line text-alert hover:bg-hover",
 } as const;
 
 type Variant = keyof typeof VARIANTS;
@@ -89,15 +89,22 @@ export function LinkButton({
   );
 }
 
+// Status reads by label + weight, not colored pills. Color is spent only where
+// it must be noticed: alert (overdue/declined) and accent (approved/paid).
 const STATUS_STYLES: Record<DocStatus, string> = {
-  draft: "bg-slate-100 text-slate-600",
-  sent: "bg-blue-100 text-blue-700",
-  approved: "bg-emerald-100 text-emerald-700",
-  declined: "bg-red-100 text-red-700",
-  partial: "bg-amber-100 text-amber-700",
-  paid: "bg-emerald-100 text-emerald-700",
-  overdue: "bg-red-100 text-red-700",
-  void: "bg-slate-100 text-slate-400 line-through",
+  draft: "text-faint",
+  sent: "text-ink",
+  approved: "text-accent",
+  declined: "text-alert",
+  partial: "text-ink",
+  paid: "text-accent",
+  overdue: "text-alert",
+  void: "text-faint line-through",
+};
+
+const STATUS_DOT: Partial<Record<DocStatus, string>> = {
+  overdue: "bg-alert",
+  partial: "bg-ink",
 };
 
 export function StatusBadge({
@@ -107,12 +114,13 @@ export function StatusBadge({
   status: DocStatus;
   size?: "sm" | "md";
 }) {
-  const sizeClass =
-    size === "sm" ? "px-1.5 py-0 text-[10px]" : "px-2.5 py-0.5 text-xs";
+  const textClass = size === "sm" ? "text-[10px]" : "text-[11px]";
+  const dot = STATUS_DOT[status];
   return (
     <span
-      className={`inline-flex font-medium capitalize ${sizeClass} ${STATUS_STYLES[status]}`}
+      className={`inline-flex items-center gap-1.5 font-grotesk font-medium uppercase tracking-wider ${textClass} ${STATUS_STYLES[status]}`}
     >
+      {dot && <span className={`inline-block size-1.5 ${dot}`} aria-hidden />}
       {status}
     </span>
   );

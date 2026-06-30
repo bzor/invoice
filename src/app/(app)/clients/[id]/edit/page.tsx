@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { ClientForm } from "@/components/client-form";
-import { Card, PageHeader } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { getClient } from "@/lib/data";
 
 export default async function EditClientPage({
@@ -16,9 +16,7 @@ export default async function EditClientPage({
   return (
     <div className="max-w-2xl">
       <PageHeader title={`Edit ${client.name}`} />
-      <Card className="p-6">
-        <ClientForm client={client} />
-      </Card>
+      <ClientForm client={client} />
     </div>
   );
 }

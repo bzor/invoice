@@ -1,8 +1,8 @@
 "use client";
 
-import { deletePayment, recordPayment } from "@/lib/actions/payments";
+import { deletePayment, markPaid, recordPayment } from "@/lib/actions/payments";
 import { Input } from "@/components/form";
-import { Card, buttonClass } from "@/components/ui";
+import { buttonClass } from "@/components/ui";
 import { today } from "@/lib/dates";
 import { formatDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
@@ -13,35 +13,29 @@ export function PaymentsPanel({
   currency,
   total,
   payments,
+  contactEmail,
 }: {
   invoiceId: string;
   currency: string;
   total: number;
   payments: Payment[];
+  contactEmail?: string;
 }) {
   const paid = payments.reduce((s, p) => s + Number(p.amount), 0);
   const due = Math.max(0, total - paid);
   const money = (n: number) => formatMoney(n, currency);
 
   return (
-    <Card className="p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">Payments</h2>
-        <div className="text-right text-sm">
-          <span className="text-slate-500">Due </span>
-          <span className="font-semibold tnum text-slate-900">{money(due)}</span>
-        </div>
-      </div>
-
-      {payments.length > 0 && (
-        <ul className="mb-4 divide-y divide-slate-100">
+    <div>
+      {payments.length > 0 ? (
+        <ul className="divide-y divide-line">
           {payments.map((p) => (
-            <li key={p.id} className="flex items-center justify-between py-2 text-sm">
+            <li key={p.id} className="flex items-center justify-between py-2.5 text-sm">
               <div>
-                <span className="tnum font-medium text-slate-900">
+                <span className="tnum font-medium text-ink">
                   {money(Number(p.amount))}
                 </span>
-                <span className="ml-2 text-slate-400">
+                <span className="ml-2 text-faint">
                   {formatDate(p.date)}
                   {p.method ? ` · ${p.method}` : ""}
                 </span>
@@ -49,44 +43,72 @@ export function PaymentsPanel({
               <form action={deletePayment}>
                 <input type="hidden" name="id" value={p.id} />
                 <input type="hidden" name="invoice_id" value={invoiceId} />
-                <button className="text-xs text-slate-400 hover:text-red-500">
+                <button className="font-grotesk text-xs uppercase tracking-wider text-faint hover:text-alert">
                   Remove
                 </button>
               </form>
             </li>
           ))}
         </ul>
+      ) : (
+        due > 0.005 && (
+          <p className="text-sm text-faint">No payments recorded yet.</p>
+        )
       )}
 
       {due > 0.005 && (
-        <form
-          action={recordPayment}
-          className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-4"
+        <div
+          className={
+            payments.length > 0 ? "mt-4 border-t border-line pt-4" : "mt-3"
+          }
         >
-          <input type="hidden" name="invoice_id" value={invoiceId} />
-          <div className="col-span-1">
-            <label className="text-xs text-slate-500">Amount</label>
-            <Input
-              type="number"
-              step="any"
-              name="amount"
-              defaultValue={due}
-              required
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-xs text-slate-500">Date</label>
-            <Input type="date" name="date" defaultValue={today()} />
-          </div>
-          <div className="col-span-2">
-            <label className="text-xs text-slate-500">Method (optional)</label>
-            <Input name="method" placeholder="Bank transfer, check…" />
-          </div>
-          <div className="col-span-2">
-            <button className={buttonClass("primary")}>Record payment</button>
-          </div>
-        </form>
+          <form action={recordPayment} className="grid grid-cols-2 gap-2">
+            <input type="hidden" name="invoice_id" value={invoiceId} />
+            <div className="col-span-1">
+              <label className="font-grotesk text-xs uppercase tracking-wider text-muted">Amount</label>
+              <Input
+                type="number"
+                step="any"
+                name="amount"
+                defaultValue={due}
+                required
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="font-grotesk text-xs uppercase tracking-wider text-muted">Date</label>
+              <Input type="date" name="date" defaultValue={today()} />
+            </div>
+            <div className="col-span-2">
+              <label className="font-grotesk text-xs uppercase tracking-wider text-muted">Method (optional)</label>
+              <Input name="method" placeholder="Bank transfer, check…" />
+            </div>
+            <div className="col-span-2">
+              <button className={buttonClass("primary")}>Record payment</button>
+            </div>
+          </form>
+
+          {/* Quick-settle the full balance, with an opt-in receipt */}
+          <form
+            action={markPaid}
+            className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4"
+          >
+            <input type="hidden" name="invoice_id" value={invoiceId} />
+            {contactEmail ? (
+              <label className="flex items-center gap-2 text-sm text-muted">
+                <input
+                  type="checkbox"
+                  name="send_receipt"
+                  className="border-line"
+                />
+                Email receipt to {contactEmail}
+              </label>
+            ) : (
+              <span className="text-sm text-faint">Settle the full balance</span>
+            )}
+            <button className={buttonClass("secondary")}>Mark as paid</button>
+          </form>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

@@ -5,7 +5,11 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { getPdfData } from "@/lib/data";
 import { formatDate } from "@/lib/dates";
-import { documentEmailHtml, sendDocumentEmail } from "@/lib/email";
+import {
+  documentEmailHtml,
+  reminderEmailHtml,
+  sendDocumentEmail,
+} from "@/lib/email";
 import { siteUrl } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import { renderDocumentPdf } from "@/lib/pdf/document-pdf";
@@ -82,5 +86,64 @@ export async function sendDocument(input: {
 
   revalidatePath("/");
   revalidatePath(`/${doc.type === "invoice" ? "invoices" : "estimates"}/${doc.id}`);
+  return { ok: true };
+}
+
+/** Email the invoice's contact a payment reminder, with the PDF attached. */
+export async function sendReminder(id: string): Promise<SendResult> {
+  await requireUser();
+  const supabase = await createSupabase();
+
+  const data = await getPdfData(id);
+  if (!data) return { ok: false, error: "Invoice not found" };
+  const { doc } = data;
+  if (doc.type !== "invoice") {
+    return { ok: false, error: "Reminders are for invoices only" };
+  }
+
+  const to = (data.contact?.email || "").trim();
+  if (!to) {
+    return {
+      ok: false,
+      error: "No recipient — add an email to the invoice's contact.",
+    };
+  }
+
+  const { data: pays } = await supabase
+    .from("payments")
+    .select("amount")
+    .eq("invoice_id", id);
+  const paid = ((pays ?? []) as { amount: number }[]).reduce(
+    (s, p) => s + Number(p.amount),
+    0,
+  );
+  const due = Number(doc.total) - paid;
+  if (due <= 0.005) {
+    return { ok: false, error: "This invoice is already paid in full." };
+  }
+
+  const overdue =
+    !!doc.due_date && doc.due_date < new Date().toISOString().slice(0, 10);
+  const pdf = await renderDocumentPdf(data);
+
+  try {
+    await sendDocumentEmail({
+      to,
+      replyTo: data.settings.business_email || process.env.ALLOWED_EMAIL,
+      subject: `Reminder: Invoice ${doc.number} from ${data.settings.business_name}`,
+      filename: `${doc.number}.pdf`,
+      pdf,
+      html: reminderEmailHtml({
+        number: doc.number,
+        businessName: data.settings.business_name,
+        amountDue: formatMoney(due, doc.currency),
+        dueDate: doc.due_date ? formatDate(doc.due_date) : null,
+        overdue,
+      }),
+    });
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Send failed" };
+  }
+
   return { ok: true };
 }

@@ -19,7 +19,7 @@ export default async function InvoicesPage() {
           action={<LinkButton href="/invoices/new">New invoice</LinkButton>}
         />
       ) : (
-        <DocumentsTable docs={docs} />
+        <DocumentsTable docs={docs} type="invoice" />
       )}
     </>
   );

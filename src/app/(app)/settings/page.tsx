@@ -1,11 +1,28 @@
 /* eslint-disable @next/next/no-img-element */
 import { saveSettings } from "@/app/(app)/settings/actions";
 import { Field, Input, Select, Textarea } from "@/components/form";
-import { Card, PageHeader, buttonClass } from "@/components/ui";
+import { PageHeader, buttonClass } from "@/components/ui";
 import { CURRENCIES, NET_TERMS } from "@/lib/currencies";
 import { getSettings } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <h2 className="border-b border-line pb-2 font-grotesk text-xs uppercase tracking-wider text-muted">
+        {title}
+      </h2>
+      <div className="mt-5">{children}</div>
+    </section>
+  );
+}
 
 export default async function SettingsPage() {
   const settings = await getSettings();
@@ -14,9 +31,8 @@ export default async function SettingsPage() {
     <div className="max-w-3xl">
       <PageHeader title="Settings" />
 
-      <form action={saveSettings} className="space-y-6">
-        <Card className="p-6">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Business</h2>
+      <form action={saveSettings} className="space-y-10">
+        <Section title="Business">
           <div className="space-y-4">
             <Field label="Business name">
               <Input name="business_name" defaultValue={settings.business_name} />
@@ -59,12 +75,9 @@ export default async function SettingsPage() {
               </div>
             </Field>
           </div>
-        </Card>
+        </Section>
 
-        <Card className="p-6">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">
-            Payment details
-          </h2>
+        <Section title="Payment details">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Domestic bank info">
               <Textarea
@@ -83,10 +96,9 @@ export default async function SettingsPage() {
               />
             </Field>
           </div>
-        </Card>
+        </Section>
 
-        <Card className="p-6">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Defaults</h2>
+        <Section title="Defaults">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Default payment terms">
               <Select
@@ -108,13 +120,10 @@ export default async function SettingsPage() {
               defaultValue={settings.default_notes}
             />
           </Field>
-        </Card>
+        </Section>
 
-        <Card className="p-6">
-          <h2 className="mb-1 text-sm font-semibold text-slate-900">
-            Numbering
-          </h2>
-          <p className="mb-4 text-xs text-slate-400">
+        <Section title="Numbering">
+          <p className="-mt-1 mb-4 text-xs text-faint">
             Next number is the prefix + counter, zero-padded. e.g.{" "}
             {settings.invoice_prefix}-
             {String(settings.invoice_counter).padStart(settings.number_padding, "0")}
@@ -151,9 +160,11 @@ export default async function SettingsPage() {
               />
             </Field>
           </div>
-        </Card>
+        </Section>
 
-        <button className={buttonClass("primary")}>Save settings</button>
+        <div className="border-t border-line pt-6">
+          <button className={buttonClass("primary")}>Save settings</button>
+        </div>
       </form>
     </div>
   );

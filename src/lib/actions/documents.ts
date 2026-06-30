@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/lib/auth";
 import { addDays } from "@/lib/dates";
+import { setFlash } from "@/lib/flash";
 import { getFxRate } from "@/lib/fx";
 import { lineTotal, computeTotals } from "@/lib/money";
 import { createClient as createSupabase } from "@/lib/supabase/server";
@@ -141,6 +142,11 @@ export async function saveDocument(
     );
   }
 
+  await setFlash(
+    input.id
+      ? "Changes saved"
+      : `${input.type === "invoice" ? "Invoice" : "Estimate"} created`,
+  );
   return { id: documentId, number };
 }
 
@@ -165,6 +171,7 @@ export async function approveEstimate(formData: FormData) {
     approved_at: new Date().toISOString(),
     declined_at: null,
   });
+  await setFlash("Estimate approved");
 }
 
 export async function declineEstimate(formData: FormData) {
@@ -173,6 +180,7 @@ export async function declineEstimate(formData: FormData) {
     status: "declined",
     declined_at: new Date().toISOString(),
   });
+  await setFlash("Estimate declined");
 }
 
 export async function markSent(formData: FormData) {
@@ -181,11 +189,13 @@ export async function markSent(formData: FormData) {
     status: "sent",
     sent_at: new Date().toISOString(),
   });
+  await setFlash("Marked as sent");
 }
 
 export async function voidDocument(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   await setDocStatus(id, { status: "void" });
+  await setFlash("Document voided");
 }
 
 /** Create a draft invoice from an estimate. Returns the new invoice id. */
@@ -263,8 +273,105 @@ export async function convertToInvoice(formData: FormData) {
 
   revalidatePath("/invoices");
   revalidatePath(`/estimates/${estimateId}`);
+  await setFlash("Invoice created from estimate");
   const { redirect } = await import("next/navigation");
   redirect(`/invoices/${invoiceId}`);
+}
+
+/**
+ * Create a draft copy of a document — same client, contact, line items, costs,
+ * currency, discount and notes — with a new number and today's issue date.
+ * Redirects to the new draft. Works for invoices and estimates.
+ */
+export async function duplicateDocument(
+  sourceId: string,
+): Promise<{ id: string; type: DocType }> {
+  await requireUser();
+  const supabase = await createSupabase();
+
+  const { data: src } = await supabase
+    .from("documents")
+    .select("*, line_items(*)")
+    .eq("id", sourceId)
+    .single();
+  if (!src) throw new Error("Document not found");
+  const d = src as unknown as {
+    type: DocType;
+    client_id: string;
+    contact_id: string | null;
+    po_number: string;
+    subject: string;
+    net_terms: number | null;
+    currency: string;
+    discount_type: DiscountType;
+    discount_value: number;
+    notes: string;
+    bank_info_mode: BankInfoMode;
+    base_currency: string;
+    subtotal: number;
+    discount_total: number;
+    total: number;
+    line_items: (LineInput & { position: number })[];
+  };
+
+  const issue = new Date().toISOString().slice(0, 10);
+  const due = d.net_terms != null ? addDays(issue, d.net_terms) : null;
+  const fxRate = (await getFxRate(d.currency, d.base_currency, issue)) ?? 1;
+
+  const { data: num, error: numErr } = await supabase.rpc(
+    "next_document_number",
+    { p_type: d.type },
+  );
+  if (numErr) throw new Error(numErr.message);
+
+  const { data: created, error } = await supabase
+    .from("documents")
+    .insert({
+      type: d.type,
+      number: num as string,
+      status: "draft",
+      client_id: d.client_id,
+      contact_id: d.contact_id,
+      po_number: d.po_number,
+      subject: d.subject,
+      issue_date: issue,
+      due_date: due,
+      net_terms: d.net_terms,
+      currency: d.currency,
+      discount_type: d.discount_type,
+      discount_value: d.discount_value,
+      notes: d.notes,
+      bank_info_mode: d.bank_info_mode,
+      base_currency: d.base_currency,
+      fx_rate: fxRate,
+      subtotal: d.subtotal,
+      discount_total: d.discount_total,
+      total: d.total,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  const newId = (created as { id: string }).id;
+
+  if (d.line_items.length) {
+    const ordered = [...d.line_items].sort((a, b) => a.position - b.position);
+    await supabase.from("line_items").insert(
+      ordered.map((li, i) => ({
+        document_id: newId,
+        position: i,
+        title: li.title,
+        description: li.description,
+        quantity: li.quantity,
+        unit_price: li.unit_price,
+        line_total: lineTotal(li.quantity, li.unit_price),
+      })),
+    );
+  }
+
+  const base = d.type === "invoice" ? "invoices" : "estimates";
+  revalidatePath("/");
+  revalidatePath(`/${base}`);
+  return { id: newId, type: d.type };
 }
 
 export async function deleteDocument(formData: FormData) {

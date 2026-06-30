@@ -7,11 +7,14 @@ import {
   approveEstimate,
   convertToInvoice,
   declineEstimate,
+  duplicateDocument,
   markSent,
   voidDocument,
 } from "@/lib/actions/documents";
-import { sendDocument } from "@/lib/actions/send";
+import { sendDocument, sendReminder } from "@/lib/actions/send";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 import { Input, Select, Textarea } from "@/components/form";
+import { useToast } from "@/components/toast";
 import { buttonClass } from "@/components/ui";
 import { siteUrl } from "@/lib/env";
 import type { DocStatus, DocType } from "@/lib/types";
@@ -32,7 +35,10 @@ export function DocumentActions({
   contacts: { name: string; email: string }[];
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [pending, startTransition] = useTransition();
+  const [dupPending, startDuplicate] = useTransition();
+  const [remindPending, startRemind] = useTransition();
   const [sendOpen, setSendOpen] = useState(false);
   const initialTo = defaultEmail || contacts[0]?.email || "";
   const [to, setTo] = useState(initialTo);
@@ -41,22 +47,49 @@ export function DocumentActions({
     !contacts.some((c) => c.email === initialTo),
   );
   const [message, setMessage] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const basePath = type === "invoice" ? "invoices" : "estimates";
   const isEstimate = type === "estimate";
+  const showTransitions =
+    status === "draft" ||
+    (isEstimate && (status === "sent" || status === "approved"));
+  // Invoices with an outstanding balance can be reminded.
+  const canRemind =
+    type === "invoice" &&
+    (status === "sent" || status === "partial" || status === "overdue");
 
   function doSend() {
-    setFeedback(null);
     startTransition(async () => {
       const res = await sendDocument({ id, to, message });
       if (res.ok) {
         setSendOpen(false);
-        setFeedback("Sent ✓");
+        toast("Sent");
         router.refresh();
       } else {
-        setFeedback(res.error);
+        toast(res.error, "error");
+      }
+    });
+  }
+
+  function doDuplicate() {
+    startDuplicate(async () => {
+      const res = await duplicateDocument(id);
+      toast("Duplicated — opening new draft");
+      router.push(
+        `/${res.type === "invoice" ? "invoices" : "estimates"}/${res.id}`,
+      );
+    });
+  }
+
+  function doRemind() {
+    startRemind(async () => {
+      const res = await sendReminder(id);
+      if (res.ok) {
+        toast("Reminder sent");
+        router.refresh();
+      } else {
+        toast(res.error, "error");
       }
     });
   }
@@ -70,6 +103,21 @@ export function DocumentActions({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setSendOpen((v) => !v)}
+          className={buttonClass("primary")}
+        >
+          Send…
+        </button>
+        {canRemind && (
+          <button
+            onClick={doRemind}
+            disabled={remindPending}
+            className={buttonClass("secondary")}
+          >
+            {remindPending ? "Sending…" : "Send reminder"}
+          </button>
+        )}
         <a
           href={`/documents/${id}/pdf?download=1`}
           className={buttonClass("secondary")}
@@ -80,16 +128,22 @@ export function DocumentActions({
           Edit
         </a>
         <button
-          onClick={() => setSendOpen((v) => !v)}
-          className={buttonClass("primary")}
+          onClick={doDuplicate}
+          disabled={dupPending}
+          className={buttonClass("secondary")}
         >
-          Send…
+          {dupPending ? "Duplicating…" : "Duplicate"}
         </button>
+        {isEstimate && (
+          <button onClick={copyShare} className={buttonClass("secondary")}>
+            {copied ? "Copied!" : "Copy share link"}
+          </button>
+        )}
       </div>
 
       {sendOpen && (
-        <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-4">
-          <label className="text-xs font-medium text-slate-500">To</label>
+        <div className="space-y-2 border border-line bg-surface p-4">
+          <label className="font-grotesk text-xs font-medium uppercase tracking-wider text-muted">To</label>
           {contacts.length > 0 && !custom ? (
             <Select
               value={to}
@@ -125,7 +179,7 @@ export function DocumentActions({
                     setCustom(false);
                     setTo(contacts[0].email);
                   }}
-                  className="text-xs font-medium text-slate-500 hover:text-slate-900"
+                  className="text-xs font-medium text-muted hover:text-ink"
                 >
                   ← Choose from contacts
                 </button>
@@ -156,58 +210,58 @@ export function DocumentActions({
         </div>
       )}
 
-      {/* Status-specific actions */}
-      <div className="flex flex-wrap gap-2">
-        {isEstimate && (
-          <>
-            <button onClick={copyShare} className={buttonClass("secondary")}>
-              {copied ? "Copied!" : "Copy share link"}
-            </button>
-            {(status === "draft" || status === "sent") && (
-              <>
-                <form action={approveEstimate}>
-                  <input type="hidden" name="id" value={id} />
-                  <button className={buttonClass("secondary")}>
-                    Mark approved
-                  </button>
-                </form>
-                <form action={declineEstimate}>
-                  <input type="hidden" name="id" value={id} />
-                  <button className={buttonClass("secondary")}>
-                    Mark declined
-                  </button>
-                </form>
-              </>
-            )}
-            {status === "approved" && (
-              <form action={convertToInvoice}>
+      {/* Status transitions — moving the document through its lifecycle */}
+      {showTransitions && (
+        <div className="flex flex-wrap gap-2 border-t border-line pt-3">
+          {isEstimate && status === "approved" && (
+            <form action={convertToInvoice}>
+              <input type="hidden" name="id" value={id} />
+              <button className={buttonClass("primary")}>
+                Convert to invoice
+              </button>
+            </form>
+          )}
+
+          {status === "draft" && (
+            <form action={markSent}>
+              <input type="hidden" name="id" value={id} />
+              <button className={buttonClass("secondary")}>Mark as sent</button>
+            </form>
+          )}
+
+          {isEstimate && (status === "draft" || status === "sent") && (
+            <>
+              <form action={approveEstimate}>
                 <input type="hidden" name="id" value={id} />
-                <button className={buttonClass("primary")}>
-                  Convert to invoice
+                <button className={buttonClass("secondary")}>
+                  Mark approved
                 </button>
               </form>
-            )}
-          </>
-        )}
+              <form action={declineEstimate}>
+                <input type="hidden" name="id" value={id} />
+                <button className={buttonClass("secondary")}>
+                  Mark declined
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      )}
 
-        {status === "draft" && (
-          <form action={markSent}>
-            <input type="hidden" name="id" value={id} />
-            <button className={buttonClass("secondary")}>
-              Mark as sent
-            </button>
-          </form>
-        )}
-
-        {status !== "void" && (
+      {/* Destructive — kept quiet and separate */}
+      {status !== "void" && (
+        <div className="flex justify-end border-t border-line pt-3">
           <form action={voidDocument}>
             <input type="hidden" name="id" value={id} />
-            <button className={buttonClass("danger")}>Void</button>
+            <ConfirmSubmit
+              message="Void this document? This cannot be undone."
+              className={buttonClass("danger")}
+            >
+              Void
+            </ConfirmSubmit>
           </form>
-        )}
-      </div>
-
-      {feedback && <p className="text-sm text-slate-500">{feedback}</p>}
+        </div>
+      )}
     </div>
   );
 }

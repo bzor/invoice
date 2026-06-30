@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/lib/auth";
+import { setFlash } from "@/lib/flash";
 import { createClient as createSupabase } from "@/lib/supabase/server";
 
 function str(form: FormData, key: string) {
@@ -32,6 +33,7 @@ export async function saveClient(formData: FormData) {
 
   if (id) {
     await supabase.from("clients").update(payload).eq("id", id);
+    await setFlash("Client saved");
     revalidatePath(`/clients/${id}`);
     redirect(`/clients/${id}`);
   } else {
@@ -40,6 +42,7 @@ export async function saveClient(formData: FormData) {
       .insert(payload)
       .select("id")
       .single();
+    await setFlash("Client created");
     revalidatePath("/clients");
     redirect(`/clients/${(data as { id: string }).id}`);
   }
@@ -50,6 +53,7 @@ export async function deleteClient(formData: FormData) {
   const supabase = await createSupabase();
   const id = str(formData, "id");
   await supabase.from("clients").delete().eq("id", id);
+  await setFlash("Client deleted");
   revalidatePath("/clients");
   redirect("/clients");
 }
@@ -86,6 +90,7 @@ export async function saveContact(formData: FormData) {
     await supabase.from("contacts").insert(payload);
   }
 
+  await setFlash(id ? "Contact saved" : "Contact added");
   revalidatePath(`/clients/${clientId}`);
   redirect(`/clients/${clientId}`);
 }
@@ -96,6 +101,7 @@ export async function deleteContact(formData: FormData) {
   const id = str(formData, "id");
   const clientId = str(formData, "client_id");
   await supabase.from("contacts").delete().eq("id", id);
+  await setFlash("Contact removed");
   revalidatePath(`/clients/${clientId}`);
   redirect(`/clients/${clientId}`);
 }

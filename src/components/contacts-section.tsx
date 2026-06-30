@@ -20,7 +20,7 @@ function ContactForm({
     <form
       action={saveContact}
       onSubmit={onDone}
-      className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4"
+      className="space-y-3 border border-line bg-canvas p-4"
     >
       <input type="hidden" name="client_id" value={clientId} />
       {contact && <input type="hidden" name="id" value={contact.id} />}
@@ -40,12 +40,12 @@ function ContactForm({
         </Field>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="flex items-center gap-2 text-sm text-muted">
         <input
           type="checkbox"
           name="is_primary"
           defaultChecked={contact?.is_primary}
-          className="rounded border-slate-300"
+          className="border-line"
         />
         Primary contact
       </label>
@@ -79,13 +79,13 @@ export function ContactsSection({
   return (
     <div className="space-y-3">
       {contacts.length === 0 && !adding && (
-        <p className="text-sm text-slate-400">No contacts yet.</p>
+        <p className="text-sm text-faint">No contacts yet.</p>
       )}
 
-      <ul className="space-y-2">
+      <ul className="divide-y divide-line border-b border-line">
         {contacts.map((c) =>
           editingId === c.id ? (
-            <li key={c.id}>
+            <li key={c.id} className="py-3">
               <ContactForm
                 clientId={clientId}
                 contact={c}
@@ -95,25 +95,25 @@ export function ContactsSection({
           ) : (
             <li
               key={c.id}
-              className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3"
+              className="flex items-center justify-between gap-3 py-3"
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-ink">
                   {c.name}
                   {c.is_primary && (
-                    <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-normal text-slate-500">
+                    <span className="ml-2 border border-line px-1.5 py-0.5 font-grotesk text-[10px] uppercase tracking-wider text-muted">
                       Primary
                     </span>
                   )}
                 </p>
-                <p className="truncate text-xs text-slate-500">
+                <p className="truncate text-xs text-muted">
                   {[c.title, c.email, c.phone].filter(Boolean).join(" · ") || "—"}
                 </p>
               </div>
               <div className="flex items-center gap-2 pl-3">
                 <button
                   onClick={() => setEditingId(c.id)}
-                  className="text-xs font-medium text-slate-500 hover:text-slate-900"
+                  className="font-grotesk text-xs uppercase tracking-wider text-muted hover:text-ink"
                 >
                   Edit
                 </button>
@@ -122,7 +122,7 @@ export function ContactsSection({
                   <input type="hidden" name="client_id" value={clientId} />
                   <button
                     type="submit"
-                    className="text-xs font-medium text-red-500 hover:text-red-700"
+                    className="font-grotesk text-xs uppercase tracking-wider text-alert hover:opacity-70"
                   >
                     Delete
                   </button>

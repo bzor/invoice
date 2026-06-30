@@ -11,13 +11,30 @@
 }
 
 @theme inline {
-  --color-background: #ffffff;
-  --color-foreground: #0f172a;
+  /* Cool-paper palette — structure comes from line + space, not boxes */
+  --color-canvas: #f7f8f8; /* page background — warm-cool paper, never pure white */
+  --color-surface: #ffffff; /* raised content surfaces (tables, the rare panel) */
+  --color-ink: #16181a; /* primary text — near-black, not slate */
+  --color-muted: #6b7177; /* secondary text, labels, captions */
+  --color-faint: #9aa0a6; /* tertiary — hints, placeholders */
+  --color-line: #e4e7e8; /* the one hairline rule used everywhere */
+  --color-hover: #f1f3f4; /* faint row/control hover wash */
+  --color-accent: #2b4c6f; /* muted ink-blue — links, positive status */
+  --color-alert: #b23a2e; /* reserved strictly for overdue / declined */
+
+  /* Back-compat aliases for anything still referencing the old names */
+  --color-background: var(--color-canvas);
+  --color-foreground: var(--color-ink);
+
+  /* Two roles, one voice:
+     sans  (Inter)            — body copy, table data, numbers
+     grotesk (Familjen)       — structural/uppercase type: titles, labels,
+                                nav, buttons, status. Matches the documents. */
   --font-sans:
     var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif;
-  --font-title: "Bzor Display", var(--font-sans);
   --font-grotesk: var(--font-familjen), var(--font-inter), system-ui, sans-serif;
+  --font-title: var(--font-grotesk);
 }
 
 html,
@@ -26,8 +43,8 @@ body {
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
+  background: var(--color-canvas);
+  color: var(--color-ink);
   font-family: var(--font-sans);
 }
 
@@ -36,10 +53,19 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Square, borderless aesthetic — no rounded corners or hairline borders */
+/* Interactive elements get a pointer cursor — native buttons default to the
+   arrow in Tailwind v4. Disabled buttons keep the default cursor. */
+button:not(:disabled),
+[role="button"] {
+  cursor: pointer;
+}
+
+/* Square everywhere — functionalist, no decorative radius.
+   Borders are allowed (and default to the line token); structure is built
+   from hairlines and whitespace, not rounded boxes. */
 *,
 *::before,
 *::after {
   border-radius: 0 !important;
-  border-width: 0 !important;
+  border-color: var(--color-line);
 }

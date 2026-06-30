@@ -1,10 +1,61 @@
 import Link from "next/link";
 
-import { Card, PageHeader } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { getYearlyReport } from "@/lib/data";
 import { formatMoney } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
+
+// Shared column template — section head and rows align on the same grid.
+const TCOLS = "grid-cols-[minmax(0,1fr)_auto_auto]";
+
+function ReportSection({
+  title,
+  headLabel,
+  rows,
+  empty,
+  fmt,
+}: {
+  title: string;
+  headLabel: string;
+  rows: { label: string; invoiced: number; paid: number }[];
+  empty?: string;
+  fmt: (n: number) => string;
+}) {
+  return (
+    <section>
+      <h2 className="font-grotesk text-xs uppercase tracking-wider text-muted">
+        {title}
+      </h2>
+
+      {rows.length === 0 ? (
+        <p className="py-8 text-sm text-faint">{empty}</p>
+      ) : (
+        <>
+          <div
+            className={`mt-3 grid ${TCOLS} gap-x-8 border-b border-line pb-2 font-grotesk text-[11px] uppercase tracking-wider text-faint`}
+          >
+            <span>{headLabel}</span>
+            <span className="text-right">Invoiced</span>
+            <span className="text-right">Collected</span>
+          </div>
+          <ul className="divide-y divide-line">
+            {rows.map((r, i) => (
+              <li
+                key={i}
+                className={`grid ${TCOLS} items-baseline gap-x-8 py-2.5 text-sm`}
+              >
+                <span className="truncate text-ink">{r.label}</span>
+                <span className="text-right tnum text-ink">{fmt(r.invoiced)}</span>
+                <span className="text-right tnum text-ink">{fmt(r.paid)}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
 
 export default async function ReportsPage({
   searchParams,
@@ -25,15 +76,15 @@ export default async function ReportsPage({
         title="Reports"
         subtitle={`All figures in ${report.baseCurrency}`}
         action={
-          <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1">
+          <div className="flex gap-1 border border-line bg-surface p-1">
             {years.map((y) => (
               <Link
                 key={y}
                 href={`/reports?year=${y}`}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                className={`px-3 py-1.5 font-grotesk text-xs uppercase tracking-wider transition ${
                   y === year
-                    ? "bg-black text-white"
-                    : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-ink text-surface"
+                    : "text-muted hover:bg-hover hover:text-ink"
                 }`}
               >
                 {y}
@@ -43,83 +94,48 @@ export default async function ReportsPage({
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card className="p-5">
-          <p className="text-sm text-slate-500">Invoiced in {year}</p>
-          <p className="mt-1 text-2xl font-semibold tnum text-slate-900">
+      {/* Hero — the year's two headline figures as a single lined band */}
+      <section className="grid grid-cols-2 divide-x divide-line border-y border-line">
+        <div className="px-8 py-7 first:pl-0">
+          <p className="font-grotesk text-xs uppercase tracking-wider text-muted">
+            Invoiced in {year}
+          </p>
+          <p className="mt-2 text-4xl font-medium tnum leading-none text-ink">
             {fmt(report.invoiced)}
           </p>
-        </Card>
-        <Card className="p-5">
-          <p className="text-sm text-slate-500">Collected in {year}</p>
-          <p className="mt-1 text-2xl font-semibold tnum text-emerald-600">
+        </div>
+        <div className="px-8 py-7 last:pr-0">
+          <p className="font-grotesk text-xs uppercase tracking-wider text-muted">
+            Collected in {year}
+          </p>
+          <p className="mt-2 text-4xl font-medium tnum leading-none text-accent">
             {fmt(report.paid)}
           </p>
-        </Card>
-      </div>
+        </div>
+      </section>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <div className="border-b border-slate-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">By quarter</h2>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-400">
-                <th className="px-5 py-2 font-medium">Quarter</th>
-                <th className="px-5 py-2 text-right font-medium">Invoiced</th>
-                <th className="px-5 py-2 text-right font-medium">Collected</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {report.quarters.map((q, i) => (
-                <tr key={i}>
-                  <td className="px-5 py-2 text-slate-600">Q{i + 1}</td>
-                  <td className="px-5 py-2 text-right tnum text-slate-700">
-                    {fmt(q.invoiced)}
-                  </td>
-                  <td className="px-5 py-2 text-right tnum text-slate-700">
-                    {fmt(q.paid)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
-
-        <Card>
-          <div className="border-b border-slate-100 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">By client</h2>
-          </div>
-          {report.byClient.length === 0 ? (
-            <p className="px-5 py-8 text-center text-sm text-slate-400">
-              No activity in {year}.
-            </p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-slate-400">
-                  <th className="px-5 py-2 font-medium">Client</th>
-                  <th className="px-5 py-2 text-right font-medium">Invoiced</th>
-                  <th className="px-5 py-2 text-right font-medium">Collected</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {report.byClient.map((c) => (
-                  <tr key={c.name}>
-                    <td className="px-5 py-2 text-slate-700">{c.name}</td>
-                    <td className="px-5 py-2 text-right tnum text-slate-700">
-                      {fmt(c.invoiced)}
-                    </td>
-                    <td className="px-5 py-2 text-right tnum text-slate-700">
-                      {fmt(c.paid)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Card>
+      <div className="mt-12 grid gap-x-12 gap-y-12 lg:grid-cols-2">
+        <ReportSection
+          title="By quarter"
+          headLabel="Quarter"
+          fmt={fmt}
+          rows={report.quarters.map((q, i) => ({
+            label: `Q${i + 1}`,
+            invoiced: q.invoiced,
+            paid: q.paid,
+          }))}
+        />
+        <ReportSection
+          title="By client"
+          headLabel="Client"
+          fmt={fmt}
+          empty={`No activity in ${year}.`}
+          rows={report.byClient.map((c) => ({
+            label: c.name,
+            invoiced: c.invoiced,
+            paid: c.paid,
+          }))}
+        />
       </div>
     </>
   );

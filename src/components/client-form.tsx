@@ -57,7 +57,7 @@ export function ClientForm({ client }: { client?: Client }) {
         />
       </Field>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 border-t border-line pt-6">
         <button type="submit" className={buttonClass("primary")}>
           {client ? "Save changes" : "Create client"}
         </button>
