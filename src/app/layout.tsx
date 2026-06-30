@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Familjen_Grotesk, Inter } from "next/font/google";
 
 import "./globals.css";
@@ -18,6 +18,13 @@ const familjen = Familjen_Grotesk({
 export const metadata: Metadata = {
   title: "Bzor Invoice",
   description: "Invoicing for client projects",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
