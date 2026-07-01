@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { DocumentPreview } from "@/components/document-preview";
+import { PreviewFit } from "@/components/preview-fit";
 import { ShareActions } from "@/components/share-actions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SharedDocumentPayload } from "@/lib/types";
@@ -23,9 +24,10 @@ export default async function SharePage({
   if (doc.type !== "estimate") notFound();
 
   return (
-    <main className="min-h-full overflow-x-auto bg-canvas py-10">
+    <main className="min-h-full bg-canvas py-6 sm:py-10">
       <div className="mx-auto w-[816px] max-w-full space-y-5 px-4">
         <ShareActions token={token} initialStatus={doc.status} />
+        <PreviewFit>
         <DocumentPreview
           doc={doc}
           client={client}
@@ -39,6 +41,7 @@ export default async function SharePage({
             bank_international: business.bank_international,
           }}
         />
+        </PreviewFit>
       </div>
     </main>
   );

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DocumentActions } from "@/components/document-actions";
 import { DocumentPreview } from "@/components/document-preview";
 import { PaymentsPanel } from "@/components/payments-panel";
+import { PreviewFit } from "@/components/preview-fit";
 import { StatusBadge } from "@/components/ui";
 import { amountPaid } from "@/lib/data";
 import { formatDate } from "@/lib/dates";
@@ -30,7 +31,7 @@ function Stat({
           ? "text-faint"
           : "text-ink";
   return (
-    <div className="px-8 py-6 first:pl-0 last:pr-0">
+    <div className="py-4 sm:px-8 sm:py-6 sm:first:pl-0 sm:last:pr-0">
       <p className="font-grotesk text-xs uppercase tracking-wider text-muted">
         {label}
       </p>
@@ -137,7 +138,7 @@ export function DocumentDetail({
 
       {/* Summary band — the glanceable money picture */}
       {isInvoice ? (
-        <section className="grid grid-cols-3 divide-x divide-line border-y border-line">
+        <section className="grid grid-cols-1 divide-y divide-line border-y border-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           <Stat label="Total" value={money(total)} />
           <Stat label="Paid" value={money(paid)} tone={paid > 0 ? "accent" : "muted"} />
           <Stat
@@ -148,7 +149,7 @@ export function DocumentDetail({
           />
         </section>
       ) : (
-        <section className="grid grid-cols-2 divide-x divide-line border-y border-line">
+        <section className="grid grid-cols-1 divide-y divide-line border-y border-line sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           <Stat label="Total" value={money(total)} />
           <Stat label="Issued" value={issued} />
         </section>
@@ -193,7 +194,8 @@ export function DocumentDetail({
       {/* The document itself — a sheet on the canvas */}
       <section className="mt-14">
         <SectionLabel>Document preview</SectionLabel>
-        <div className="mt-6 overflow-x-auto">
+        <div className="mt-6">
+          <PreviewFit>
           <DocumentPreview
             doc={doc}
             client={doc.client}
@@ -208,6 +210,7 @@ export function DocumentDetail({
               bank_international: settings.bank_international,
             }}
           />
+          </PreviewFit>
         </div>
       </section>
     </div>

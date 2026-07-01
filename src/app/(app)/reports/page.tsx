@@ -95,20 +95,20 @@ export default async function ReportsPage({
       />
 
       {/* Hero — the year's two headline figures as a single lined band */}
-      <section className="grid grid-cols-2 divide-x divide-line border-y border-line">
-        <div className="px-8 py-7 first:pl-0">
+      <section className="grid grid-cols-1 divide-y divide-line border-y border-line sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+        <div className="py-5 sm:px-8 sm:py-7 sm:first:pl-0">
           <p className="font-grotesk text-xs uppercase tracking-wider text-muted">
             Invoiced in {year}
           </p>
-          <p className="mt-2 text-4xl font-medium tnum leading-none text-ink">
+          <p className="mt-2 text-3xl font-medium tnum leading-none text-ink sm:text-4xl">
             {fmt(report.invoiced)}
           </p>
         </div>
-        <div className="px-8 py-7 last:pr-0">
+        <div className="py-5 sm:px-8 sm:py-7 sm:last:pr-0">
           <p className="font-grotesk text-xs uppercase tracking-wider text-muted">
             Collected in {year}
           </p>
-          <p className="mt-2 text-4xl font-medium tnum leading-none text-accent">
+          <p className="mt-2 text-3xl font-medium tnum leading-none text-accent sm:text-4xl">
             {fmt(report.paid)}
           </p>
         </div>

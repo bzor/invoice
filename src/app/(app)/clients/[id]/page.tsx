@@ -55,8 +55,8 @@ export default async function ClientDetailPage({
       />
 
       {/* Lifetime money rollup (base currency) */}
-      <section className="mb-10 grid grid-cols-3 divide-x divide-line border-y border-line">
-        <div className="px-8 py-5 first:pl-0">
+      <section className="mb-10 grid grid-cols-1 divide-y divide-line border-y border-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="py-4 sm:px-8 sm:py-5 sm:first:pl-0">
           <p className="font-grotesk text-xs uppercase tracking-wider text-muted">
             Invoiced
           </p>
@@ -64,7 +64,7 @@ export default async function ClientDetailPage({
             {fmt(stats.invoiced)}
           </p>
         </div>
-        <div className="px-8 py-5">
+        <div className="py-4 sm:px-8 sm:py-5">
           <p className="font-grotesk text-xs uppercase tracking-wider text-muted">
             Paid
           </p>
@@ -72,7 +72,7 @@ export default async function ClientDetailPage({
             {fmt(stats.paid)}
           </p>
         </div>
-        <div className="px-8 py-5 last:pr-0">
+        <div className="py-4 sm:px-8 sm:py-5 sm:last:pr-0">
           <p className="font-grotesk text-xs uppercase tracking-wider text-muted">
             Outstanding
           </p>

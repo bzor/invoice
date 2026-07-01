@@ -12,9 +12,9 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-8 flex items-end justify-between gap-4">
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
       <div>
-        <h1 className="font-grotesk text-5xl font-semibold uppercase leading-none tracking-tight text-ink">
+        <h1 className="font-grotesk text-3xl font-semibold uppercase leading-none tracking-tight text-ink sm:text-5xl">
           {title}
         </h1>
         {subtitle && (

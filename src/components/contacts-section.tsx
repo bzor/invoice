@@ -25,7 +25,7 @@ function ContactForm({
       <input type="hidden" name="client_id" value={clientId} />
       {contact && <input type="hidden" name="id" value={contact.id} />}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Name">
           <Input name="name" defaultValue={contact?.name} required autoFocus />
         </Field>

@@ -262,7 +262,7 @@ export function DocumentEditor({
         {/* Line items */}
         <section>
           <SectionLabel>Line items</SectionLabel>
-          <div className="mb-3 grid grid-cols-12 gap-3 font-grotesk text-xs font-medium uppercase tracking-wider text-muted">
+          <div className="mb-3 hidden grid-cols-12 gap-3 font-grotesk text-xs font-medium uppercase tracking-wider text-muted sm:grid">
             <div className="col-span-6">Item</div>
             <div className="col-span-2 text-right">Qty</div>
             <div className="col-span-2 text-right">Price</div>
@@ -271,8 +271,11 @@ export function DocumentEditor({
           </div>
           <div className="space-y-2">
           {rows.map((r) => (
-            <div key={r.key} className="grid grid-cols-12 items-start gap-3">
-              <div className="col-span-6 space-y-1.5">
+            <div
+              key={r.key}
+              className="space-y-2 border-b border-line pb-4 sm:grid sm:grid-cols-12 sm:items-start sm:gap-3 sm:space-y-0 sm:border-0 sm:pb-0"
+            >
+              <div className="space-y-1.5 sm:col-span-6">
                 <Input
                   value={r.title}
                   placeholder="Item title"
@@ -287,35 +290,49 @@ export function DocumentEditor({
                   }
                 />
               </div>
-              <Input
-                type="number"
-                step="any"
-                className="col-span-2 text-right"
-                value={r.quantity}
-                onChange={(e) =>
-                  updateRow(r.key, { quantity: Number(e.target.value) })
-                }
-              />
-              <Input
-                type="number"
-                step="any"
-                className="col-span-2 text-right"
-                value={r.unit_price}
-                onChange={(e) =>
-                  updateRow(r.key, { unit_price: Number(e.target.value) })
-                }
-              />
-              <div className="col-span-1 pt-2 text-right text-sm tnum text-ink">
-                {money((Number(r.quantity) || 0) * (Number(r.unit_price) || 0))}
+              {/* Qty / Price / Total / remove — a labeled row on mobile,
+                  dissolving into the 12-col grid at sm via `contents`. */}
+              <div className="flex items-end gap-3 sm:contents">
+                <label className="flex-1 sm:col-span-2">
+                  <span className="mb-1 block font-grotesk text-[10px] font-medium uppercase tracking-wider text-muted sm:hidden">
+                    Qty
+                  </span>
+                  <Input
+                    type="number"
+                    step="any"
+                    className="w-full text-right"
+                    value={r.quantity}
+                    onChange={(e) =>
+                      updateRow(r.key, { quantity: Number(e.target.value) })
+                    }
+                  />
+                </label>
+                <label className="flex-1 sm:col-span-2">
+                  <span className="mb-1 block font-grotesk text-[10px] font-medium uppercase tracking-wider text-muted sm:hidden">
+                    Price
+                  </span>
+                  <Input
+                    type="number"
+                    step="any"
+                    className="w-full text-right"
+                    value={r.unit_price}
+                    onChange={(e) =>
+                      updateRow(r.key, { unit_price: Number(e.target.value) })
+                    }
+                  />
+                </label>
+                <div className="pb-2 text-right text-sm tnum text-ink sm:col-span-1 sm:pb-0 sm:pt-2">
+                  {money((Number(r.quantity) || 0) * (Number(r.unit_price) || 0))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeRow(r.key)}
+                  className="pb-2 text-right text-faint hover:text-alert sm:col-span-1 sm:pb-0 sm:pt-2"
+                  aria-label="Remove line"
+                >
+                  ✕
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => removeRow(r.key)}
-                className="col-span-1 pt-2 text-right text-faint hover:text-alert"
-                aria-label="Remove line"
-              >
-                ✕
-              </button>
             </div>
           ))}
         </div>

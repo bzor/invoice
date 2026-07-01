@@ -22,7 +22,7 @@ export function ClientForm({ client }: { client?: Client }) {
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Default currency">
           <Select name="currency" defaultValue={client?.currency ?? "USD"}>
             {CURRENCIES.map((c) => (

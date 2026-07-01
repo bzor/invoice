@@ -37,7 +37,7 @@ export default async function SettingsPage() {
             <Field label="Business name">
               <Input name="business_name" defaultValue={settings.business_name} />
             </Field>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Email">
                 <Input
                   type="email"
@@ -99,7 +99,7 @@ export default async function SettingsPage() {
         </Section>
 
         <Section title="Defaults">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Default payment terms">
               <Select
                 name="default_net_terms"

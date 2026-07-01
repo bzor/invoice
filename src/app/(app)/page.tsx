@@ -15,9 +15,11 @@ export const dynamic = "force-dynamic";
 
 function SecondaryStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="px-8 py-5 first:pl-0 last:pr-0">
-      <p className="font-grotesk text-xs uppercase tracking-wider text-muted">{label}</p>
-      <p className="mt-1.5 text-2xl font-medium tnum text-ink">{value}</p>
+    <div className="bg-canvas px-4 py-4 sm:px-6 sm:py-5">
+      <p className="font-grotesk text-[11px] uppercase tracking-wider text-muted sm:text-xs">
+        {label}
+      </p>
+      <p className="mt-1.5 text-xl font-medium tnum text-ink sm:text-2xl">{value}</p>
     </div>
   );
 }
@@ -53,17 +55,17 @@ function OpenList({
             <li key={d.id}>
               <Link
                 href={`/${d.type === "invoice" ? "invoices" : "estimates"}/${d.id}`}
-                className="group -mx-2 grid grid-cols-[1fr_auto] items-center gap-x-6 gap-y-1 px-2 py-3 transition hover:bg-hover sm:grid-cols-[auto_1fr_auto_6.5rem]"
+                className="group -mx-2 grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-0.5 px-2 py-3 transition hover:bg-hover sm:grid-cols-[auto_1fr_auto_6.5rem] sm:gap-x-6"
               >
-                <span className="text-sm font-medium tnum text-ink">{d.number}</span>
-                <span className="truncate text-sm text-muted">
+                <span className="order-1 text-sm font-medium tnum text-ink">{d.number}</span>
+                <span className="order-3 col-span-2 truncate text-sm text-muted sm:order-2 sm:col-span-1">
                   {d.client?.name ?? "—"}
                   {d.subject ? ` · ${d.subject}` : ""}
                 </span>
-                <span className="text-right text-sm tnum text-ink">
+                <span className="order-2 text-right text-sm tnum text-ink sm:order-3">
                   {formatMoney(Number(d.total), d.currency)}
                 </span>
-                <span className="hidden justify-self-end sm:flex">
+                <span className="order-4 hidden justify-self-end sm:flex">
                   <StatusBadge
                     status={effectiveStatus(d, amountPaid(d.payments))}
                     size="sm"
@@ -147,10 +149,10 @@ export default async function DashboardPage() {
       />
 
       {/* Hero — the one number that matters, with overdue called out in alert */}
-      <section className="flex items-end justify-between border-y border-line py-7">
+      <section className="flex flex-col gap-3 border-y border-line py-6 sm:flex-row sm:items-end sm:justify-between sm:py-7">
         <div>
           <p className="font-grotesk text-xs uppercase tracking-wider text-muted">Outstanding</p>
-          <p className="mt-2 text-5xl font-medium tnum leading-none text-ink">
+          <p className="mt-2 text-4xl font-medium tnum leading-none text-ink sm:text-5xl">
             {fmt(stats.outstanding)}
           </p>
         </div>
@@ -168,8 +170,10 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* Secondary stats — a single lined band, not a card grid */}
-      <section className="grid grid-cols-4 divide-x divide-line border-b border-line">
+      {/* Secondary stats — a single lined band, not a card grid.
+          gap-px over a line-colored bg draws hairlines that reflow cleanly
+          from 2 columns on mobile to 4 on desktop. */}
+      <section className="grid grid-cols-2 gap-px border-b border-line bg-line md:grid-cols-4">
         <SecondaryStat label="Invoiced this month" value={fmt(stats.invoicedThisMonth)} />
         <SecondaryStat label="Invoiced last month" value={fmt(stats.invoicedLastMonth)} />
         <SecondaryStat label="Paid last month" value={fmt(stats.paidLastMonth)} />
