@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Familjen_Grotesk, Inter } from "next/font/google";
 
+import { NoPinchZoom } from "@/components/no-pinch-zoom";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,7 +36,10 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${familjen.variable} h-full antialiased`}
     >
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <NoPinchZoom />
+        {children}
+      </body>
     </html>
   );
 }

@@ -61,6 +61,8 @@ body {
   background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  /* Disable double-tap-to-zoom (pinch is blocked in JS via NoPinchZoom). */
+  touch-action: manipulation;
 }
 
 /* Tabular figures for money columns */
