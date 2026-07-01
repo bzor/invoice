@@ -28,6 +28,13 @@ const FILTERS: Record<DocType, DocStatus[]> = {
   estimate: ["draft", "sent", "approved", "declined"],
 };
 
+// An overdue invoice is just a sent invoice that's past due, so the "sent"
+// tab is a superset that includes overdue. ("overdue" stays as a subset tab.)
+function matchesStatus(effective: DocStatus, tab: DocStatus): boolean {
+  if (tab === "sent") return effective === "sent" || effective === "overdue";
+  return effective === tab;
+}
+
 type Sort = "newest" | "oldest" | "amount-desc" | "amount-asc";
 
 export function DocumentsTable({
@@ -48,16 +55,20 @@ export function DocumentsTable({
     [docs],
   );
 
+  // Count per tab using the same matcher as the filter, so each tab's number
+  // equals exactly what clicking it shows (sent includes overdue).
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: withStatus.length };
-    for (const { s } of withStatus) c[s] = (c[s] ?? 0) + 1;
+    for (const tab of FILTERS[type]) {
+      c[tab] = withStatus.filter(({ s }) => matchesStatus(s, tab)).length;
+    }
     return c;
-  }, [withStatus]);
+  }, [withStatus, type]);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = withStatus.filter(({ d, s }) => {
-      if (status !== "all" && s !== status) return false;
+      if (status !== "all" && !matchesStatus(s, status)) return false;
       if (!q) return true;
       return (
         d.number.toLowerCase().includes(q) ||
