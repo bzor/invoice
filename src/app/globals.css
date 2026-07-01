@@ -40,6 +40,21 @@
 html,
 body {
   height: 100%;
+  /* No horizontal panning and no rubber-band overscroll — kills the
+     side-to-side drag on touch devices and gives a native app feel. */
+  overflow-x: hidden;
+  overscroll-behavior: none;
+}
+
+/* iOS Safari zooms the page when a focused input's font is under 16px
+   (it ignores maximum-scale for this). Bump form controls to 16px on
+   phones so focusing a field never triggers a zoom. */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 body {

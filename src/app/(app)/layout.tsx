@@ -17,7 +17,7 @@ export default async function AppLayout({
       <div className="mx-auto flex h-screen max-w-[1440px] flex-col md:flex-row">
         <Sidebar email={user.email ?? ""} />
         <MobileNav email={user.email ?? ""} />
-        <main className="min-w-0 flex-1 overflow-y-auto">
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
           <div className="px-4 py-6 sm:px-8 sm:py-8">{children}</div>
         </main>
       </div>
