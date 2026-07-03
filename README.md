@@ -58,7 +58,9 @@ Copy `.env.example` to `.env.local` and fill in:
 
 In Resend, add and verify **bzorsystems.com** (Domains → Add → copy the DKIM /
 SPF / return-path DNS records into your DNS host). Once verified you can send
-from `invoices@bzorsystems.com`.
+from `invoices@bzorsystems.com`. For DMARC, the delivery-tracking webhook, and
+the enterprise-deliverability notes, see
+[docs/email-deliverability.md](docs/email-deliverability.md).
 
 ### 4. Run
 
