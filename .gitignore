@@ -36,8 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
-# Local docs / Harvest exports — contain client PII, keep out of the repo
-docs/
+# Local docs / Harvest exports — contain client PII, keep out of the repo.
+# Everything under docs/ is ignored; tracked docs are re-included explicitly.
+docs/*
+!docs/email-deliverability.md
 
 # typescript
 *.tsbuildinfo
