@@ -35,7 +35,9 @@ export async function proxy(request: NextRequest) {
   const isPublic =
     path.startsWith("/login") ||
     path.startsWith("/auth") ||
-    path.startsWith("/share");
+    path.startsWith("/share") ||
+    // Self-authenticates via Svix signature; no session cookie to expect.
+    path.startsWith("/api/resend-webhook");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
