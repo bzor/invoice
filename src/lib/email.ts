@@ -12,6 +12,9 @@ export function emailFrom() {
   return process.env.RESEND_FROM ?? "invoices@example.com";
 }
 
+/** Resend's message id, used to correlate later webhook events. */
+export type SendResult = { id: string | null };
+
 export async function sendDocumentEmail(opts: {
   to: string;
   subject: string;
@@ -19,16 +22,18 @@ export async function sendDocumentEmail(opts: {
   filename: string;
   pdf: Buffer;
   replyTo?: string;
-}) {
-  const { error } = await resend().emails.send({
+}): Promise<SendResult> {
+  const { data, error } = await resend().emails.send({
     from: emailFrom(),
     to: opts.to,
     replyTo: opts.replyTo || undefined,
     subject: opts.subject,
     html: opts.html,
+    text: htmlToText(opts.html),
     attachments: [{ filename: opts.filename, content: opts.pdf }],
   });
   if (error) throw new Error(error.message);
+  return { id: data?.id ?? null };
 }
 
 /** Send a plain email with no attachment (notifications, reminders w/o PDF). */
@@ -37,15 +42,17 @@ export async function sendPlainEmail(opts: {
   subject: string;
   html: string;
   replyTo?: string;
-}) {
-  const { error } = await resend().emails.send({
+}): Promise<SendResult> {
+  const { data, error } = await resend().emails.send({
     from: emailFrom(),
     to: opts.to,
     replyTo: opts.replyTo || undefined,
     subject: opts.subject,
     html: opts.html,
+    text: htmlToText(opts.html),
   });
   if (error) throw new Error(error.message);
+  return { id: data?.id ?? null };
 }
 
 export function reminderEmailHtml(opts: {
@@ -147,4 +154,38 @@ function escapeHtml(str: string) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+/**
+ * Derive a plain-text alternative from our (simple, hand-authored) HTML
+ * templates. Shipping a text/plain part alongside the HTML is a cheap,
+ * reliable spam-score win — HTML-only mail is penalised by most filters.
+ * This isn't a general HTML parser; it just handles the tags we actually
+ * emit (p, tables, links, br).
+ */
+export function htmlToText(html: string): string {
+  return html
+    // Links → "text (url)" so the destination survives in plain text.
+    .replace(
+      /<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi,
+      (_m, href, text) => `${text.replace(/<[^>]+>/g, "").trim()} (${href})`,
+    )
+    // Keep a table row's label + value on one line, tab-separated.
+    .replace(/<\/td>\s*<td[^>]*>/gi, "\t")
+    // Block-level boundaries become line breaks.
+    .replace(/<\/(p|tr|div|h[1-6]|table|li)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    // Drop every remaining tag.
+    .replace(/<[^>]+>/g, "")
+    // Decode the handful of entities our templates produce.
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    // Tidy whitespace: strip source indentation, trailing spaces, runaway
+    // blank lines, and edges.
+    .replace(/^[ \t]+/gm, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

@@ -6,10 +6,14 @@ import { PaymentsPanel } from "@/components/payments-panel";
 import { PreviewFit } from "@/components/preview-fit";
 import { StatusBadge } from "@/components/ui";
 import { amountPaid } from "@/lib/data";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatDateTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { effectiveStatus } from "@/lib/status";
-import type { DocumentWithRelations, Settings } from "@/lib/types";
+import type {
+  DocumentWithRelations,
+  EmailEventRow,
+  Settings,
+} from "@/lib/types";
 
 function Stat({
   label,
@@ -50,6 +54,66 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <h2 className="border-b border-line pb-2 font-grotesk text-xs uppercase tracking-wider text-muted">
       {children}
     </h2>
+  );
+}
+
+// Maps a Resend event type to a label + colour. Good news (delivered/opened/
+// clicked) reads accent; trouble (bounced/complained/failed) reads alert;
+// neutral steps stay quiet. Unknown future types fall through to a title-case.
+const EVENT_STYLES: Record<string, { label: string; tone: string; dot: string }> = {
+  sent: { label: "Sent", tone: "text-muted", dot: "bg-faint" },
+  delivered: { label: "Delivered", tone: "text-accent", dot: "bg-accent" },
+  delivery_delayed: { label: "Delivery delayed", tone: "text-muted", dot: "bg-faint" },
+  opened: { label: "Opened", tone: "text-accent", dot: "bg-accent" },
+  clicked: { label: "Clicked link", tone: "text-accent", dot: "bg-accent" },
+  bounced: { label: "Bounced", tone: "text-alert", dot: "bg-alert" },
+  complained: { label: "Marked as spam", tone: "text-alert", dot: "bg-alert" },
+  failed: { label: "Failed", tone: "text-alert", dot: "bg-alert" },
+};
+
+function eventStyle(type: string) {
+  return (
+    EVENT_STYLES[type] ?? {
+      label: type.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase()),
+      tone: "text-muted",
+      dot: "bg-faint",
+    }
+  );
+}
+
+function DeliveryPanel({ events }: { events: EmailEventRow[] }) {
+  if (!events.length) return null;
+  return (
+    <section className="mt-10">
+      <SectionLabel>Delivery</SectionLabel>
+      <ul className="mt-4 divide-y divide-line border-y border-line">
+        {events.map((e) => {
+          const s = eventStyle(e.type);
+          return (
+            <li key={e.id} className="flex items-baseline gap-3 py-2.5 text-sm">
+              <span
+                className={`inline-block size-1.5 shrink-0 translate-y-1.5 ${s.dot}`}
+                aria-hidden
+              />
+              <span
+                className={`shrink-0 font-grotesk text-xs font-medium uppercase tracking-wider ${s.tone}`}
+              >
+                {s.label}
+              </span>
+              {e.recipient && (
+                <span className="truncate text-muted">{e.recipient}</span>
+              )}
+              {e.detail && (
+                <span className="truncate text-faint">· {e.detail}</span>
+              )}
+              <span className="ml-auto shrink-0 font-grotesk text-[11px] uppercase tracking-wider text-faint tnum">
+                {formatDateTime(e.occurred_at)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -190,6 +254,9 @@ export function DocumentDetail({
           </section>
         )}
       </div>
+
+      {/* Delivery — real inbox state from Resend webhooks */}
+      <DeliveryPanel events={doc.email_events ?? []} />
 
       {/* The document itself — a sheet on the canvas */}
       <section className="mt-14">

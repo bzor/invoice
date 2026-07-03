@@ -10,6 +10,7 @@ import {
   reminderEmailHtml,
   sendDocumentEmail,
 } from "@/lib/email";
+import { recordSentEmail } from "@/lib/email-events";
 import { siteUrl } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import { renderDocumentPdf } from "@/lib/pdf/document-pdf";
@@ -48,8 +49,9 @@ export async function sendDocument(input: {
     upsert: true,
   });
 
+  let resendId: string | null = null;
   try {
-    await sendDocumentEmail({
+    ({ id: resendId } = await sendDocumentEmail({
       to,
       replyTo: data.settings.business_email || process.env.ALLOWED_EMAIL,
       subject: `${typeLabel} ${doc.number} from ${data.settings.business_name}`,
@@ -67,10 +69,13 @@ export async function sendDocument(input: {
             ? `${siteUrl()}/share/${doc.share_token}`
             : undefined,
       }),
-    });
+    }));
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Send failed" };
   }
+
+  // Correlate this send with the document so webhook events can attribute back.
+  await recordSentEmail({ documentId: doc.id, resendId, to });
 
   // Mark sent (don't downgrade an already-progressed status).
   const newStatus =
@@ -126,8 +131,9 @@ export async function sendReminder(id: string): Promise<SendResult> {
     !!doc.due_date && doc.due_date < new Date().toISOString().slice(0, 10);
   const pdf = await renderDocumentPdf(data);
 
+  let resendId: string | null = null;
   try {
-    await sendDocumentEmail({
+    ({ id: resendId } = await sendDocumentEmail({
       to,
       replyTo: data.settings.business_email || process.env.ALLOWED_EMAIL,
       subject: `Reminder: Invoice ${doc.number} from ${data.settings.business_name}`,
@@ -140,10 +146,12 @@ export async function sendReminder(id: string): Promise<SendResult> {
         dueDate: doc.due_date ? formatDate(doc.due_date) : null,
         overdue,
       }),
-    });
+    }));
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Send failed" };
   }
+
+  await recordSentEmail({ documentId: doc.id, resendId, to });
 
   return { ok: true };
 }

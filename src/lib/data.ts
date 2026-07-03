@@ -162,7 +162,7 @@ export async function getDocument(
   const { data } = await supabase
     .from("documents")
     .select(
-      "*, client:clients(*), contact:contacts(*), line_items(*), payments(*)",
+      "*, client:clients(*), contact:contacts(*), line_items(*), payments(*), email_events(*)",
     )
     .eq("id", id)
     .single();
@@ -170,6 +170,9 @@ export async function getDocument(
   if (!data) return null;
   const doc = data as unknown as DocumentWithRelations;
   doc.line_items = (doc.line_items ?? []).sort((a, b) => a.position - b.position);
+  doc.email_events = (doc.email_events ?? []).sort((a, b) =>
+    b.occurred_at.localeCompare(a.occurred_at),
+  );
   return doc;
 }
 

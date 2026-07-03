@@ -108,6 +108,29 @@ export interface Payment {
   created_at: string;
 }
 
+export type EmailEventType =
+  | "sent"
+  | "delivered"
+  | "delivery_delayed"
+  | "opened"
+  | "clicked"
+  | "bounced"
+  | "complained"
+  | "failed";
+
+export interface EmailEventRow {
+  id: string;
+  document_id: string | null;
+  resend_email_id: string | null;
+  // Stored as free text (Resend may add new event types); narrowed on display.
+  type: EmailEventType | string;
+  recipient: string;
+  detail: string;
+  occurred_at: string;
+  created_at: string;
+  event_id: string | null;
+}
+
 type Row<T> = T;
 type Insert<T> = Partial<T>;
 type Update<T> = Partial<T>;
@@ -128,6 +151,7 @@ export interface Database {
       documents: TableShape<DocumentRow>;
       line_items: TableShape<LineItem>;
       payments: TableShape<Payment>;
+      email_events: TableShape<EmailEventRow>;
     };
     Views: Record<string, never>;
     Functions: {
@@ -160,6 +184,7 @@ export interface DocumentWithRelations extends DocumentRow {
   contact: Contact | null;
   line_items: LineItem[];
   payments?: Payment[];
+  email_events?: EmailEventRow[];
 }
 
 export interface SharedDocumentPayload {

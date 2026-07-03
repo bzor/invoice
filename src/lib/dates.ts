@@ -18,3 +18,14 @@ export function formatDate(date: string | null): string {
     timeZone: "UTC",
   });
 }
+
+/** Date + time for timestamptz values (e.g. email delivery events). */
+export function formatDateTime(ts: string | null): string {
+  if (!ts) return "—";
+  return new Date(ts).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
