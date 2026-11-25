@@ -263,3 +263,21 @@ export async function duplicateDocumentCore(
   revalidatePath(`/${section(src.type)}`);
   return { ...created, type: src.type };
 }
+
+/**
+ * Mark a document sent without emailing it — for one delivered some other way
+ * (a vendor portal, a personal email). Sets the status unconditionally; callers
+ * decide which starting statuses they allow.
+ */
+export async function markSentCore(db: Db, id: string): Promise<void> {
+  const { data, error } = await db
+    .from("documents")
+    .update({ status: "sent", sent_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("type")
+    .single();
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+  revalidatePath(`/${section((data as { type: DocType }).type)}`);
+  revalidatePath(`/${section((data as { type: DocType }).type)}/${id}`);
+}

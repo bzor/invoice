@@ -38,6 +38,7 @@ argument:
 | `saveDocumentCore` | `saveDocument` | `POST /documents`, `PATCH /documents/:ref` |
 | `duplicateDocumentCore` | `duplicateDocument` | `POST …/duplicate` |
 | `convertToInvoiceCore` | `convertToInvoice` | `POST …/convert` |
+| `markSentCore` | `markSent` | `POST …/mark-sent` |
 | `recordPaymentCore` | `recordPayment` | `POST …/payments` |
 | `sendDocumentCore`, `sendReminderCore` | `sendDocument`, `sendReminder` | `POST …/send`, `…/remind` |
 | `saveClientCore`, `saveContactCore` | `saveClient`, `saveContact` (`app/(app)/clients/actions.ts`) | `POST /clients`, `POST /clients/:id/contacts` |
@@ -51,6 +52,9 @@ way. The readers in `src/lib/data.ts` take an optional `db` for the same reason.
 
 - **Creates drafts only.** Nothing is emailed until `send` / `remind`, and those
   require `"confirm": true` in the body so an agent cannot send by accident.
+- **`mark-sent` only moves forward.** It accepts a draft or an approved estimate
+  (the statuses the email path also advances) and refuses anything further
+  along; the web button has no such check. It emails no one, so needs no confirm.
 - **Edits drafts only.** A document that has gone to a client is changed in the UI.
 - **No delete or void, and no edits to existing clients or contacts.** UI only.
 - **A new client whose name resembles an existing one is refused** unless

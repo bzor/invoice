@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import {
   convertToInvoiceCore,
   duplicateDocumentCore,
+  markSentCore,
   saveDocumentCore,
   type DocumentInput,
 } from "@/lib/core/documents";
@@ -61,11 +62,9 @@ export async function declineEstimate(formData: FormData) {
 }
 
 export async function markSent(formData: FormData) {
+  await requireUser();
   const id = String(formData.get("id") ?? "");
-  await setDocStatus(id, {
-    status: "sent",
-    sent_at: new Date().toISOString(),
-  });
+  await markSentCore(await createSupabase(), id);
   await setFlash("Marked as sent");
 }
 
