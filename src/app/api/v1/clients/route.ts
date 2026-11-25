@@ -8,6 +8,7 @@ import {
   parseContact,
   rejectUnknown,
   similarClients,
+  squash,
 } from "@/lib/api-clients";
 import { saveClientCore, saveContactCore } from "@/lib/core/clients";
 
@@ -20,7 +21,14 @@ export const GET = api(async ({ db, url }) => {
     .split(/\s+/)
     .filter(Boolean);
   const clients = (await listClients(db))
-    .filter((c) => words.every((w) => c.name.toLowerCase().includes(w)))
+    .filter((c) => {
+      // Also compare with punctuation stripped, so "gsp" finds "GS&P".
+      const name = c.name.toLowerCase();
+      const bare = squash(c.name);
+      return words.every(
+        (w) => name.includes(w) || (squash(w) && bare.includes(squash(w))),
+      );
+    })
     .map(clientView);
   return { count: clients.length, clients };
 });

@@ -53,7 +53,7 @@ export async function loadClient(db: Db, id: string): Promise<ClientWithContacts
   return data as unknown as ClientWithContacts;
 }
 
-const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+export const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /**
  * Existing clients a new name might be a duplicate of: the same name ignoring
