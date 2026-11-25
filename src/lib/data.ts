@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Db } from "@/lib/supabase/db";
 import { createClient } from "@/lib/supabase/server";
 import { toBase } from "@/lib/money";
 import { effectiveStatus } from "@/lib/status";
@@ -15,8 +16,11 @@ import type {
   Settings,
 } from "@/lib/types";
 
-export async function getSettings(): Promise<Settings> {
-  const supabase = await createClient();
+// Readers below take an optional `db`: omitted, they use the request's session
+// client (web UI); the token API passes its service-role client instead.
+
+export async function getSettings(db?: Db): Promise<Settings> {
+  const supabase = db ?? (await createClient());
   const { data } = await supabase.from("settings").select("*").eq("id", 1).single();
   return data as unknown as Settings;
 }
@@ -157,8 +161,9 @@ export async function listRecentPaidInvoices(
 
 export async function getDocument(
   id: string,
+  db?: Db,
 ): Promise<DocumentWithRelations | null> {
-  const supabase = await createClient();
+  const supabase = db ?? (await createClient());
   const { data } = await supabase
     .from("documents")
     .select(
@@ -193,8 +198,9 @@ export async function listContactEmailsForClient(
 
 export async function findInvoiceFromEstimate(
   estimateId: string,
+  db?: Db,
 ): Promise<{ id: string; number: string } | null> {
-  const supabase = await createClient();
+  const supabase = db ?? (await createClient());
   const { data } = await supabase
     .from("documents")
     .select("id, number")
@@ -203,8 +209,11 @@ export async function findInvoiceFromEstimate(
   return (data as { id: string; number: string } | null) ?? null;
 }
 
-export async function getPdfData(id: string) {
-  const [doc, settings] = await Promise.all([getDocument(id), getSettings()]);
+export async function getPdfData(id: string, db?: Db) {
+  const [doc, settings] = await Promise.all([
+    getDocument(id, db),
+    getSettings(db),
+  ]);
   if (!doc) return null;
   return {
     doc: doc as DocumentRow,
@@ -222,9 +231,9 @@ export function amountPaid(
 }
 
 /** Dashboard rollups, all converted to the base currency. */
-export async function getDashboardStats() {
-  const supabase = await createClient();
-  const settings = await getSettings();
+export async function getDashboardStats(db?: Db) {
+  const supabase = db ?? (await createClient());
+  const settings = await getSettings(supabase);
 
   const { data: invoices } = await supabase
     .from("documents")
@@ -318,9 +327,12 @@ export type YearlyReport = {
   byClient: { name: string; invoiced: number; paid: number }[];
 };
 
-export async function getYearlyReport(year: number): Promise<YearlyReport> {
-  const supabase = await createClient();
-  const settings = await getSettings();
+export async function getYearlyReport(
+  year: number,
+  db?: Db,
+): Promise<YearlyReport> {
+  const supabase = db ?? (await createClient());
+  const settings = await getSettings(supabase);
   const start = `${year}-01-01`;
   const end = `${year + 1}-01-01`;
 

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/lib/auth";
+import { recomputeStatus, recordPaymentCore } from "@/lib/core/payments";
 import { getPdfData } from "@/lib/data";
 import { formatDate, today } from "@/lib/dates";
 import { receiptEmailHtml, sendPlainEmail } from "@/lib/email";
@@ -55,56 +56,18 @@ async function emailReceipt(
   }
 }
 
-/** Recompute an invoice's stored status from its payments + due date. */
-async function recomputeStatus(invoiceId: string) {
-  const supabase = await createSupabase();
-  const { data: doc } = await supabase
-    .from("documents")
-    .select("total, due_date, status, payments(amount)")
-    .eq("id", invoiceId)
-    .single();
-  if (!doc) return;
-
-  const d = doc as unknown as {
-    total: number;
-    due_date: string | null;
-    status: string;
-    payments: { amount: number }[];
-  };
-  if (d.status === "draft" || d.status === "void") return;
-
-  const paid = d.payments.reduce((s, p) => s + Number(p.amount), 0);
-  const due = Number(d.total) - paid;
-
-  let status: string;
-  if (due <= 0.005) status = "paid";
-  else if (d.due_date && d.due_date < today()) status = "overdue";
-  else if (paid > 0.005) status = "partial";
-  else status = "sent";
-
-  await supabase.from("documents").update({ status }).eq("id", invoiceId);
-}
-
 export async function recordPayment(formData: FormData) {
   await requireUser();
   const supabase = await createSupabase();
 
-  const invoiceId = String(formData.get("invoice_id") ?? "");
-  const payload = {
-    invoice_id: invoiceId,
+  await recordPaymentCore(supabase, {
+    invoice_id: String(formData.get("invoice_id") ?? ""),
     amount: Number(formData.get("amount") ?? 0),
-    date: String(formData.get("date") ?? today()) || today(),
-    method: String(formData.get("method") ?? "").trim(),
-    note: String(formData.get("note") ?? "").trim(),
-  };
-  if (!invoiceId || !payload.amount) throw new Error("Amount is required");
-
-  await supabase.from("payments").insert(payload);
-  await recomputeStatus(invoiceId);
+    date: String(formData.get("date") ?? ""),
+    method: String(formData.get("method") ?? ""),
+    note: String(formData.get("note") ?? ""),
+  });
   await setFlash("Payment recorded");
-
-  revalidatePath("/");
-  revalidatePath(`/invoices/${invoiceId}`);
 }
 
 /** Settle the full outstanding balance, optionally emailing a receipt. */
@@ -144,7 +107,7 @@ export async function markPaid(formData: FormData) {
     method: "",
     note: "Marked as paid",
   });
-  await recomputeStatus(invoiceId);
+  await recomputeStatus(supabase, invoiceId);
 
   const wantReceipt = formData.get("send_receipt") === "on";
   const sent = wantReceipt
@@ -163,7 +126,7 @@ export async function deletePayment(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const invoiceId = String(formData.get("invoice_id") ?? "");
   await supabase.from("payments").delete().eq("id", id);
-  await recomputeStatus(invoiceId);
+  await recomputeStatus(supabase, invoiceId);
   await setFlash("Payment removed");
 
   revalidatePath("/");

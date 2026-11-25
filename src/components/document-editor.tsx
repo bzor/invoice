@@ -7,11 +7,8 @@ import { Field, Input, Select, Textarea } from "@/components/form";
 import { buttonClass } from "@/components/ui";
 import { CURRENCIES, NET_TERMS } from "@/lib/currencies";
 import { addDays, formatDate, today } from "@/lib/dates";
-import {
-  saveDocument,
-  type DocumentInput,
-  type LineInput,
-} from "@/lib/actions/documents";
+import { saveDocument } from "@/lib/actions/documents";
+import type { DocumentInput, LineInput } from "@/lib/core/documents";
 import { computeTotals, formatMoney } from "@/lib/money";
 import type {
   BankInfoMode,

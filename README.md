@@ -53,6 +53,7 @@ Copy `.env.example` to `.env.local` and fill in:
 | `RESEND_API_KEY` | Resend API key |
 | `RESEND_FROM` | e.g. `Bzor Systems <invoices@bzorsystems.com>` |
 | `NEXT_PUBLIC_SITE_URL` | base URL for share links + auth redirects |
+| `INVOICE_API_TOKEN` | optional; bearer token for the agent API (`/api/v1`), 32+ chars — see `docs/agent-api.md` |
 
 ### 3. Resend domain
 

@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Db } from "@/lib/supabase/db";
 import { createClient } from "@/lib/supabase/server";
 import type { EmailEventRow } from "@/lib/types";
 
@@ -12,10 +13,11 @@ export async function recordSentEmail(opts: {
   documentId: string;
   resendId: string | null;
   to: string;
+  db?: Db;
 }) {
   if (!opts.resendId) return;
   try {
-    const supabase = await createClient();
+    const supabase = opts.db ?? (await createClient());
     await supabase.from("email_events").upsert(
       {
         document_id: opts.documentId,

@@ -40,6 +40,7 @@ yarn-error.log*
 # Everything under docs/ is ignored; tracked docs are re-included explicitly.
 docs/*
 !docs/email-deliverability.md
+!docs/agent-api.md
 
 # typescript
 *.tsbuildinfo

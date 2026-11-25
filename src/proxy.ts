@@ -37,7 +37,9 @@ export async function proxy(request: NextRequest) {
     path.startsWith("/auth") ||
     path.startsWith("/share") ||
     // Self-authenticates via Svix signature; no session cookie to expect.
-    path.startsWith("/api/resend-webhook");
+    path.startsWith("/api/resend-webhook") ||
+    // Agent API: each route checks a bearer token itself (src/lib/api.ts).
+    path.startsWith("/api/v1/");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
