@@ -40,6 +40,7 @@ argument:
 | `convertToInvoiceCore` | `convertToInvoice` | `POST …/convert` |
 | `recordPaymentCore` | `recordPayment` | `POST …/payments` |
 | `sendDocumentCore`, `sendReminderCore` | `sendDocument`, `sendReminder` | `POST …/send`, `…/remind` |
+| `saveClientCore`, `saveContactCore` | `saveClient`, `saveContact` (`app/(app)/clients/actions.ts`) | `POST /clients`, `POST /clients/:id/contacts` |
 
 Server actions add `requireUser()`, flash messages and redirects; route handlers
 add token auth, input validation and JSON shaping (`src/lib/api-documents.ts`).
@@ -51,7 +52,10 @@ way. The readers in `src/lib/data.ts` take an optional `db` for the same reason.
 - **Creates drafts only.** Nothing is emailed until `send` / `remind`, and those
   require `"confirm": true` in the body so an agent cannot send by accident.
 - **Edits drafts only.** A document that has gone to a client is changed in the UI.
-- **No delete, void, or client/contact writes.** UI only.
+- **No delete or void, and no edits to existing clients or contacts.** UI only.
+- **A new client whose name resembles an existing one is refused** unless
+  `allow_similar` is set (`similarClients` in `src/lib/api-clients.ts`). The
+  match is loose on purpose; duplicates split a customer's billing history.
 - **Overpayments and repeat conversions are refused** unless explicitly forced.
 - **Unknown body fields are rejected**, so a misspelled field fails instead of
   being ignored.

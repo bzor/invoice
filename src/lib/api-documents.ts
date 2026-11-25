@@ -10,6 +10,7 @@ import {
   resolveDocumentId,
   summarize,
 } from "@/lib/api";
+import { loadClient, rejectUnknown } from "@/lib/api-clients";
 import type { DocumentInput, LineInput } from "@/lib/core/documents";
 import { CURRENCIES } from "@/lib/currencies";
 import { getDocument, getSettings } from "@/lib/data";
@@ -17,7 +18,6 @@ import { today } from "@/lib/dates";
 import type { Db } from "@/lib/supabase/db";
 import type {
   BankInfoMode,
-  Client,
   Contact,
   DiscountType,
   DocType,
@@ -96,15 +96,6 @@ const WRITABLE = [
   "bank_info_mode",
   "line_items",
 ] as const;
-
-function rejectUnknown(body: Record<string, unknown>, allowed: readonly string[]) {
-  const unknown = Object.keys(body).filter((k) => !allowed.includes(k));
-  if (unknown.length) {
-    throw new ApiError(400, `Unknown field(s): ${unknown.join(", ")}`, {
-      allowed_fields: allowed,
-    });
-  }
-}
 
 const bad = (message: string) => new ApiError(400, message);
 
@@ -216,16 +207,6 @@ function checkDiscount(input: Pick<DocumentInput, "discount_type" | "discount_va
   if (input.discount_type === "percent" && input.discount_value > 100) {
     throw bad("A percent discount cannot exceed 100");
   }
-}
-
-async function loadClient(db: Db, id: string) {
-  const { data } = await db
-    .from("clients")
-    .select("*, contacts(*)")
-    .eq("id", id)
-    .maybeSingle();
-  if (!data) throw new ApiError(404, `No client with id "${id}"`);
-  return data as unknown as Client & { contacts: Contact[] };
 }
 
 function checkContact(
